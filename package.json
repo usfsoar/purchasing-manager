@@ -1,0 +1,14 @@
+{
+  "name": "purchasing-manager",
+  "version": "1.0.0",
+  "description": "",
+  "main": "Code.gs",
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ian Sanders <iansanders@mail.usf.edu>",
+  "license": "ISC"
+
+}
