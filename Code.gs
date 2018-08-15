@@ -632,19 +632,20 @@ function markItems(newStatus, markAll) {
     var statusColumnValues = statusColumn.getValues();
 
     var userColumn, dateColumn, userColumnValues, dateColumnValues;
-    if(userColumnNum !== null) {
-      userColumn = getColumnRange(userColumnNum);
+    if(newStatus.columns.user) {
+      userColumn = getColumnRange(newStatus.columns.user.index);
       userColumnValues = userColumn.getValues();
     }
-    if(dateColumnNum !== null) {
-      dateColumn = getColumnRange(dateColumnNum);
+    if(newStatus.columns.date) {
+      dateColumn = getColumnRange(newStatus.columns.date.index);
       dateColumnValues = dateColumn.getValues();
     }
 
+    // TODO: move data to STATUSES_DATA
     var accountColumn, categoryColumn, accountColumnValues, categoryColumnValues;
-    var fillDefaultValues = newStatus === OPTS.STATUSES.SUBMITTED
-        || newStatus === OPTS.STATUSES.APPROVED
-        || newStatus === OPTS.STATUSES.AWAITING_PICKUP;
+    var fillDefaultValues = newStatus.text === STATUSES_DATA.SUBMITTED.text
+        || newStatus.text === STATUSES_DATA.APPROVED.text
+        || newStatus.text === STATUSES_DATA.AWAITING_PICKUP.text;
     if(fillDefaultValues) {
       accountColumn = getColumnRange(OPTS.ITEM_COLUMNS.ACCOUNT);
       categoryColumn = getColumnRange(OPTS.ITEM_COLUMNS.CATEGORY);
@@ -658,7 +659,7 @@ function markItems(newStatus, markAll) {
       var rangeStartIndex = range.getRow() - 1;
 
       // Loop through the rows in the range
-      for (var l = 0; l < range.getNumRows(); l++) {
+      rowLoop: for (var l = 0; l < range.getNumRows(); l++) {
         /** The index (not number) of the current row in the spreadsheet. */
         var currentSheetRowIndex = rangeStartIndex + l;
         /**
@@ -668,17 +669,18 @@ function markItems(newStatus, markAll) {
         var currentValuesRowIndex = currentSheetRowIndex - OPTS.NUM_HEADER_ROWS;
 
         // If this row's status is not in allowed statuses, don't verify, just skip
-        if(!isCurrentStatusAllowed(statusColumnValues[currentValuesRowIndex][0].toString(), newStatus)) continue;
+        var currentStatusText = statusColumnValues[currentValuesRowIndex][0].toString();
+        if(!isCurrentStatusAllowed(currentStatusText, newStatus)) continue rowLoop;
 
         // Update values in local cache
         // These ranges don't include the header, so 0 in the range is
         // OPTS.NUM_HEADER_ROWS in the spreadsheet
-        statusColumnValues[currentValuesRowIndex][0] = newStatus;
+        statusColumnValues[currentValuesRowIndex][0] = newStatus.text;
 
-        if(userColumnNum !== null) {
+        if(newStatus.columns.user) {
           userColumnValues[currentValuesRowIndex][0] = currentUser;
         }
-        if(dateColumnNum !== null) {
+        if(newStatus.columns.date) {
           dateColumnValues[currentValuesRowIndex][0] = currentDate;
         }
 
@@ -700,8 +702,8 @@ function markItems(newStatus, markAll) {
     // Write the cached values
     statusColumn.setValues(statusColumnValues);
 
-    if(userColumnNum !== null) userColumn.setValues(userColumnValues);
-    if(dateColumnNum !== null) dateColumn.setValues(dateColumnValues);
+    if(newStatus.columns.user) userColumn.setValues(userColumnValues);
+    if(newStatus.columns.date) dateColumn.setValues(dateColumnValues);
 
     if(fillDefaultValues) {
       accountColumn.setValues(accountColumnValues);
@@ -711,12 +713,9 @@ function markItems(newStatus, markAll) {
     /** All of the possible 'from' statuses, but with double quotes around them. */
     var quotedFromStatuses = OPTS.ALLOWED_PREV_STATUSES[newStatus].map(wrapInDoubleQuotes);
 
-    SpreadsheetApp.getActiveSpreadsheet().toast(
-        numMarked + ' items marked from '
-          + makeListFromArray(quotedFromStatuses, 'or')
-          + ' to "' + newStatus + '."',
-        'Completed',
-        OPTS.UI.TOAST_DURATION);
+    successNotification(numMarked + ' items marked from '
+        + makeListFromArray(quotedFromStatuses, 'or')
+        + ' to "' + newStatus + '."');
   }
 }
 
@@ -727,9 +726,9 @@ function markItems(newStatus, markAll) {
  * @returns {boolean} True if the current status of the row allows it to be
  * changed to the newStatus.
  */
-function isCurrentStatusAllowed(rowCurrentStatus, newStatus) {
-  var currentStatus = rowCurrentStatus.trim();
-  return newStatus.allowedPrevious.indexOf(currentStatus) !== -1;
+function isCurrentStatusAllowed(currentStatusText, newStatus) {
+  var currentStatusTrimmed = currentStatusText.trim();
+  return newStatus.allowedPrevious.indexOf(currentStatusTrimmed) !== -1;
 }
 
 /**
