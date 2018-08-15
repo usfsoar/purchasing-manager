@@ -13,7 +13,7 @@
 var OPTS = {
   /** Named Ranges throughout the spreadsheet. */
   NAMED_RANGES: {
-    /** Range containing the email addresses of approved officers. 
+    /** Range containing the email addresses of approved officers.
      * 1 column, 5 rows (no header). */
     APPROVED_OFFICERS: 'ApprovedOfficers',
     /** Range containing the names of all project-specific sheets.
@@ -27,10 +27,9 @@ var OPTS = {
   },
   /** The number of header rows in the project sheets. */
   NUM_HEADER_ROWS: 2,
-  /** 
+  /**
    * Relevant columns in the project sheets, as 1-based indexes.
    * @enum {Column}
-   * @typedef {1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22} EnumITEM_COLUMNS
    */
   ITEM_COLUMNS: {
     STATUS: {index: 1, name: 'Status'},
@@ -272,8 +271,8 @@ var verifyFinancialOfficer = (function() {
     if(cache.verified === null) {
       cache.verified = false;
       var email = Session.getActiveUser().getEmail();
-      
-      if(email !== '' 
+
+      if(email !== ''
         && getNamedRangeValues(OPTS.NAMED_RANGES.APPROVED_OFFICERS)
             .indexOf(email) !== -1
       ) {
@@ -301,7 +300,7 @@ function getNamedRangeValues(rangeName) {
       .filter(function (value) {
         return value !== '';
       });
-  
+
   return valuesArray;
 }
 
@@ -383,7 +382,7 @@ var getCurrentUserSlackId = (function() {
           .getSheetByName(OPTS.SHEET_NAMES.USERS);
       var userData = userSheet.getDataRange().getValues();
       var email = Session.getActiveUser().getEmail();
-      
+
       for(var i = 1; i < userData.length; i++) {
         if(userData[i][0] === email) {
           cache.slackId = userData[i][1];
@@ -410,7 +409,7 @@ function getSlackIdByEmail(email) {
       .getActiveSpreadsheet()
       .getSheetByName(OPTS.SHEET_NAMES.USERS);
   var userData = userSheet.getDataRange().getValues();
-  
+
   for(var i = 1; i < userData.length; i++) {
     if(userData[i][0] === email) {
       return userData[i][1];
@@ -437,7 +436,7 @@ var getCurrentUserFullName = (function() {
           .getSheetByName(OPTS.SHEET_NAMES.USERS);
       var userData = userSheet.getDataRange().getValues();
       var email = Session.getActiveUser().getEmail();
-      
+
       for(var i = 1; i < userData.length; i++) {
         if(userData[i][0] === email) {
           cache.fullName = userData[i][2];
@@ -598,7 +597,7 @@ function markItems(newStatus, markAll) {
   var currentUser = Session.getActiveUser().getEmail();
   var currentDate = new Date();
 
-  // We would filter out all the rows with disallowed current statuses here, 
+  // We would filter out all the rows with disallowed current statuses here,
   // rather than skipping them in both of these loops, but that would require
   // modifying the ranges, which is much more time-intensive than just skipping.
 
@@ -662,9 +661,9 @@ function markItems(newStatus, markAll) {
       for (var l = 0; l < range.getNumRows(); l++) {
         /** The index (not number) of the current row in the spreadsheet. */
         var currentSheetRowIndex = rangeStartIndex + l;
-        /** 
+        /**
          * The index of the current value row in the spreadsheet, with the first
-         * row after the headers being 0. 
+         * row after the headers being 0.
          */
         var currentValuesRowIndex = currentSheetRowIndex - OPTS.NUM_HEADER_ROWS;
 
@@ -749,89 +748,27 @@ function wrapInDoubleQuotes(stringToWrap) {
  * If the validation fails, alerts the user. Does not check row statuses;
  * rows with incorrect statuses are skipped silently.
  * @param {(string|number|Date)[]} rowValues rowValues The current data for the row.
- * @param {string} newStatus The new status of the row for testing against.
+ * @param {Status} newStatus The new status of the row for testing against.
  * @returns {boolean} True if the row is valid and can be submitted.
  */
 function validateRow(rowValues, newStatus) {
-  switch(newStatus.text) {
-    case OPTS.STATUSES.NEW:
-      return validateNewRow(rowValues);
+  var column, columnIndex;
 
-    case OPTS.STATUSES.DENIED:
-    case OPTS.STATUSES.AWAITING_INFO:
-      return validateDenyingOrAwaitingInfoRow(rowValues);
+  for(var i = 0; newStatus.reccomendedColumns && i < newStatus.reccomendedColumns.length; i++) {
+    column = newStatus.reccomendedColumns[i];
+    columnIndex = column.index - 1;
+    if(rowValues[columnIndex] === '') warnNotification('One or more items is missing a value for "' + column.name + '". Will mark anyway with default value.');
+  }
 
-    case OPTS.STATUSES.SUBMITTED:
-      return validateSubmittingRow(rowValues);
+  for(var j = 0; newStatus.requiredColumns && j < newStatus.requiredColumns.length; j++) {
+    column = newStatus.requiredColumns[j];
+    columnIndex = column.index - 1;
+    if(rowValues[columnIndex] === '') {
+      errorNotification('Cannot submit: one or more items is missing a value for "' + column.name + '". This value is required.');
+      return false;
+    }
+  }
 
-    default:
-      return true;
-  }
-}
-
-/**
- * Check if the given row has data and the data is valid for submitting as a new
- * item. If the validation fails, alerts the user. Does not check row statuses;
- * rows with incorrect statuses are skipped silently.
- * @param {(string|number|Date)[]} rowValues The current data for the row.
- * @returns {boolean} True if the row is valid and can be submitted.
- * @todo Add default category
- */
-function validateNewRow(rowValues) {
-  var missingString = 'Could not submit items because one or more items is missing a';
-  if(rowValues[OPTS.ITEM_COLUMNS.NAME - 1] === '') {
-    errorNotification(missingString + ' name.');
-    return false;
-  }
-  if(rowValues[OPTS.ITEM_COLUMNS.SUPPLIER - 1] === '') {
-    errorNotification(missingString + ' supplier.');
-    return false;
-  }
-  if(rowValues[OPTS.ITEM_COLUMNS.LINK - 1] === '') {
-    errorNotification(missingString + ' link.');
-    return false;
-  }
-  if(rowValues[OPTS.ITEM_COLUMNS.UNIT_PRICE - 1] === '') {
-    errorNotification(missingString + ' price.');
-    return false;
-  }
-  if(!rowValues[OPTS.ITEM_COLUMNS.QUANTITY - 1]) {
-    errorNotification(missingString + ' quantity.');
-    return false;
-  }
-  return true;
-}
-
-/**
- * Check if the given row has data and the data is valid for submitting to SG.
- * If the validation fails, alerts the user. Does not check row statuses;
- * rows with incorrect statuses are skipped silently.
- * @param {(string|number|Date)[]} rowValues The current data for the row.
- * @returns {boolean} True if the row is valid and can be submitted.
- */
-function validateSubmittingRow(rowValues) {
-  if(rowValues[OPTS.ITEM_COLUMNS.ACCOUNT - 1] === '') {
-    warnNotification('One or more items are missing a value for account. Defaulted to "' + OPTS.DEFAULT_ACCOUNT_NAME + '".');
-  }
-  if(rowValues[OPTS.ITEM_COLUMNS.REQUEST_ID - 1] === '') {
-    warnNotification('One or more items are missing a request ID. They will be marked as submitted anyway.');
-  }
-  return true;
-}
-
-/**
- * Check if the given row has data and the data is valid for marking as rejected
- * or as awaiting information.
- * If the validation fails, alerts the user. Does not check row statuses;
- * rows with incorrect statuses are skipped silently.
- * @param {(string|number|Date)[]} rowValues The current data for the row.
- * @returns {boolean} True if the row is valid and can be marked.
- */
-function validateDenyingOrAwaitingInfoRow(rowValues) {
-  if(rowValues[OPTS.ITEM_COLUMNS.OFFICER_COMMENTS - 1] === '') {
-    errorNotification('Could not perform this action because one or more items is missing a comment, which is required.');
-    return false;
-  }
   return true;
 }
 
@@ -852,11 +789,11 @@ function sendSlackMessage(message, webhook) {
 }
 
 /**
- * 
- * @param newStatus 
- * @param numMarked 
+ *
+ * @param newStatus
+ * @param numMarked
  * @param relatedPeople  COULD BE FINANCIAL OFFICERS!
- * @param projectSheetName 
+ * @param projectSheetName
  */
 function slackNotifyItems(newStatus, numMarked, relatedPeople, projectSheetName) {
   var userFullName = getCurrentUserFullName();
@@ -870,14 +807,14 @@ function slackNotifyItems(newStatus, numMarked, relatedPeople, projectSheetName)
   var message = '';
   switch(newStatus) {
     case OPTS.STATUSES.NEW:
-      message = 
+      message = '';
   }
 
 }
 
 /**
- * 
- * @param sheetName 
+ *
+ * @param sheetName
  */
 function getProjectNameFromSheetName(sheetName) {
   var projectsData = SpreadsheetApp
