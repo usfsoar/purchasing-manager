@@ -65,7 +65,7 @@ var OPTS = {
       WARNING: 'Alert!',
       INFO: 'Note',
     },
-    SLACK_ID_PROMPT: 'Looks like this is your first time using the SOAR purchasing database. Please enter your Slack ID (NOT YOUR USERNAME!) found in your Slack profile, in the dropdown menu. For more details see https://drive.google.com/open?id=1Q1PleYhE1i0A5VFyjKqyLswom3NQuXcn.',
+    SLACK_ID_PROMPT: 'Looks like this is your first time using the SOAR purchasing database. Please enter your Slack ID (NOT your username!) found in your Slack profile, in the dropdown menu. For more details, see https://drive.google.com/open?id=1Q1PleYhE1i0A5VFyjKqyLswom3NQuXcn.',
     FULL_NAME_PROMPT: 'Great, thank you! Please also enter your full name. You won\'t have to do this next time.'
   },
   /** Default values for items. */
@@ -401,7 +401,7 @@ function buildAndAddCustomMenu() {
     .addSeparator()
     .addItem(STATUSES_DATA.RECIEVED.actionText.selected, markSelectedRecieved.name);
 
-  if (getCurrentUserInfo().verified) {
+  if (verifyFinancialOfficer(Session.getActiveUser().getEmail())) {
     customMenu
       .addSeparator()
       .addItem(STATUSES_DATA.SUBMITTED.actionText.selected, markSelectedSubmitted.name)
@@ -455,7 +455,7 @@ function successNotification(message) {
  * Information about the user.
  */
 var getCurrentUserInfo = (function() {
-  var currentEmail = Session.getActiveUser.getEmail();
+  var currentEmail = Session.getActiveUser().getEmail();
   var cache = {
     slackId: /** @type {?string} */  (null),
     fullName: /** @type {?string} */  (null),
@@ -472,7 +472,7 @@ var getCurrentUserInfo = (function() {
 
       var userDataFound = false;
       for(var i = 1; i < userData.length; i++) {
-        if(userData[i][0] === email) {
+        if(userData[i][0] === cache.email) {
           cache.slackId = userData[i][1];
           cache.fullName = userData[i][2];
           userDataFound = true;
@@ -481,9 +481,9 @@ var getCurrentUserInfo = (function() {
       }
 
       if(!userDataFound) {
-        cache.slackId = SpreadsheetApp.getUi().prompt(OPTS.UI.SLACK_ID_PROMPT).getResponseText();
-        cache.fullName = SpreadsheetApp.getUi().prompt(OPTS.UI.FULL_NAME_PROMPT).getResponseText();
-        userSheet.appendRow([email, cache.slackId]);
+        while(!cache.slackId) cache.slackId = SpreadsheetApp.getUi().prompt(OPTS.UI.SLACK_ID_PROMPT).getResponseText();
+        while(!cache.fullName) cache.fullName = SpreadsheetApp.getUi().prompt(OPTS.UI.FULL_NAME_PROMPT).getResponseText();
+        userSheet.appendRow([cache.email, cache.slackId, cache.fullName]);
       }
     }
 
@@ -495,9 +495,10 @@ var getCurrentUserInfo = (function() {
 /**
  * Verify whether or not the email provided is one of an approved financial officer.
  * After first run, uses cache to avoid having to pull the range again.
+ * @param {string} email
  * @returns {boolean} true if the current user is approved.
  */
-function verifyFinancialOfficer() {
+function verifyFinancialOfficer(email) {
   if(email && getNamedRangeValues(OPTS.NAMED_RANGES.APPROVED_OFFICERS)
       .indexOf(email) !== -1) {
     return true;
@@ -612,7 +613,7 @@ function getAllRows() {
   var lastColumnInSheet = activeSheet.getLastColumn();
   var firstNonHeaderRow = OPTS.NUM_HEADER_ROWS + 1;
 
-  var nameColumnValues = getColumnRange(OPTS.ITEM_COLUMNS.NAME).getValues();
+  var nameColumnValues = getColumnRange(OPTS.ITEM_COLUMNS.NAME.index).getValues();
 
   /** The number of the last row in the sheet that has a value for Name. */
   var lastRowWithData = firstNonHeaderRow;
@@ -624,8 +625,7 @@ function getAllRows() {
   var numNonHeaderRowsWithData = lastRowWithData - OPTS.NUM_HEADER_ROWS;
 
   return [
-    activeSheet
-      .getRange(firstNonHeaderRow, 1, numNonHeaderRowsWithData, lastColumnInSheet)
+    activeSheet.getRange(firstNonHeaderRow, 1, numNonHeaderRowsWithData, lastColumnInSheet)
   ];
 }
 
@@ -656,8 +656,7 @@ function getColumnRange(columnNumber) {
   var firstNonHeaderRow = OPTS.NUM_HEADER_ROWS + 1;
   var numNonHeaderRows = activeSheet.getLastRow() - OPTS.NUM_HEADER_ROWS;
 
-  return activeSheet
-    .getRange(firstNonHeaderRow, columnNumber, numNonHeaderRows, 1);
+  return activeSheet.getRange(firstNonHeaderRow, columnNumber, numNonHeaderRows, 1);
 }
 
 /**
@@ -677,8 +676,9 @@ function markItems(newStatus, markAll) {
   var selectedRanges = markAll ? getAllRows() : getSelectedRows();
 
   var numMarked = 0;
-  var currentUserEmail = getCurrentUserInfo().email;
-  var currentUserFullName = getCurrentUserInfo().fullName;
+  var currentUser = getCurrentUserInfo();
+  var currentUserEmail = currentUser.email;
+  var currentUserFullName = currentUser.fullName;
   var currentDate = new Date();
 
   var currentSheet = SpreadsheetApp.getActiveSheet();
@@ -706,7 +706,7 @@ function markItems(newStatus, markAll) {
       var row = rangeValues[j];
       // If current status is not in allowed statuses, don't verify, just skip
       // minus 1 to convert from 1-based Sheets column number to 0-based array index
-      if(!isCurrentStatusAllowed(row[OPTS.ITEM_COLUMNS.STATUS - 1].toString(), newStatus)) continue;
+      if(!isCurrentStatusAllowed(row[OPTS.ITEM_COLUMNS.STATUS.index - 1].toString(), newStatus)) continue;
 
       // Otherwise validate. If a single row is invalid, quit both loops
       if(!validateRow(row, newStatus)) {
@@ -718,7 +718,7 @@ function markItems(newStatus, markAll) {
 
   if(allRowsValid) {
     // Cache the entire columns, to avoid making dozens of calls to the server
-    var statusColumn = getColumnRange(OPTS.ITEM_COLUMNS.STATUS);
+    var statusColumn = getColumnRange(OPTS.ITEM_COLUMNS.STATUS.index);
     var statusColumnValues = statusColumn.getValues();
 
     var userColumn, dateColumn, userColumnValues, dateColumnValues;
@@ -733,8 +733,8 @@ function markItems(newStatus, markAll) {
 
     var accountColumn, categoryColumn, accountColumnValues, categoryColumnValues;
     if(newStatus.fillInDefaults) {
-      accountColumn = getColumnRange(OPTS.ITEM_COLUMNS.ACCOUNT);
-      categoryColumn = getColumnRange(OPTS.ITEM_COLUMNS.CATEGORY);
+      accountColumn = getColumnRange(OPTS.ITEM_COLUMNS.ACCOUNT.index);
+      categoryColumn = getColumnRange(OPTS.ITEM_COLUMNS.CATEGORY.index);
       accountColumnValues = accountColumn.getValues();
       categoryColumnValues = categoryColumn.getValues();
     }
@@ -742,7 +742,7 @@ function markItems(newStatus, markAll) {
     // Read (not modify, so no need for range) the requestor data for notifying
     var requestorColumnValues;
     if(newStatus.slack.targetUsers === OPTS.SLACK.TARGET_USERS.REQUESTORS) {
-      requestorColumnValues = getColumnRange(OPTS.ITEM_COLUMNS.REQUEST_EMAIL).getValues();
+      requestorColumnValues = getColumnRange(OPTS.ITEM_COLUMNS.REQUEST_EMAIL.index).getValues();
     }
 
     // Loop through the ranges
