@@ -723,6 +723,7 @@ function markItems(newStatus, markAll) {
   var projectName = getProjectNameFromSheetName(currentSheet.getSheetName());
   var projectSheetUrl = SpreadsheetApp.getActiveSpreadsheet().getUrl()
       + '#gid=' + currentSheet.getSheetId();
+  var itemRequestors = /** @type {string[]} */ ([]);
 
   // We would filter out all the rows with disallowed current statuses here,
   // rather than skipping them in both of these loops, but that would require
@@ -776,6 +777,12 @@ function markItems(newStatus, markAll) {
       categoryColumnValues = categoryColumn.getValues();
     }
 
+    // Read (not modify, so no need for range) the requestor data for notifying
+    var requestorColumnValues;
+    if(newStatus.slack.targetUsers === OPTS.SLACK.TARGET_USERS.REQUESTORS) {
+      requestorColumnValues = getColumnRange(OPTS.ITEM_COLUMNS.REQUEST_EMAIL).getValues();
+    }
+
     // Loop through the ranges
     for(var k = 0; k < selectedRanges.length; k++) {
       var range = selectedRanges[k];
@@ -818,6 +825,11 @@ function markItems(newStatus, markAll) {
           }
         }
 
+        // Save the requestor data for notifying; avoid duplicates
+        if(newStatus.slack.targetUsers === OPTS.SLACK.TARGET_USERS.REQUESTORS) {
+          pushIfNew(itemRequestors, requestorColumnValues[currentValuesRowIndex][0]);
+        }
+
         numMarked++;
       }
     }
@@ -839,7 +851,28 @@ function markItems(newStatus, markAll) {
     successNotification(numMarked + ' items marked from '
         + makeListFromArray(quotedFromStatuses, 'or')
         + ' to "' + newStatus + '."');
+
+    slackNotifyItems(
+      newStatus,
+      currentUserFullName,
+      itemRequestors,
+      numMarked,
+      projectName,
+      projectSheetUrl
+    )
   }
+}
+
+/**
+ * Push `potentialNewItem` to `arr` if it's not already in `arr`. Returns modified
+ * `arr`.
+ * @param {[]} arr
+ * @param {*} potentialNewItem
+ * @return {[]}
+ */
+function pushIfNew(arr, potentialNewItem) {
+  if(arr.indexOf(potentialNewItem) === -1) arr.push(potentialNewItem);
+  return arr;
 }
 
 /**
