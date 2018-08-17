@@ -65,7 +65,7 @@ var OPTS = {
       WARNING: 'Alert!',
       INFO: 'Note',
     },
-    SLACK_ID_PROMPT: 'Looks like this is your first time using the SOAR purchasing database. Please enter your Slack ID (NOT your username!) found in your Slack profile, in the dropdown menu. For more details, see https://drive.google.com/open?id=1Q1PleYhE1i0A5VFyjKqyLswom3NQuXcn.',
+    SLACK_ID_PROMPT: 'Looks like this is your first time using the SOAR purchasing database. Please enter your Slack Member ID # (NOT your username!) found in your Slack profile, in the dropdown menu. For more details, see detailed instructions at:\nhttps://drive.google.com/open?id=1Q1PleYhE1i0A5VFyjKqyLswom3NQuXcn.',
     FULL_NAME_PROMPT: 'Great, thank you! Please also enter your full name. You won\'t have to do this next time.'
   },
   /** Default values for items. */
@@ -158,11 +158,11 @@ var STATUSES_DATA = {
       all: 'Submit all new items',
     },
     slack: {
-      emoji: ':white_circle:',
+      emoji: ':large_blue_circle:',
       targetUsers: OPTS.SLACK.TARGET_USERS.OFFICERS,
       messageTemplates: [
-        '{emoji} {userTags}: React with ' + OPTS.KYBER_TASK_REACTION + ' to the following message if you\'re going to review / submit the items:',
-        '{userFullName} has submitted {numMarked} new items to be purchased for {projectName}. *<View Items|{projectSheetUrl}>*'
+        '{userTags}: React with ' + OPTS.SLACK.KYBER_TASK_REACTION + ' to the following message if you\'re going to review / submit the items:',
+        '{emoji} {userFullName} has submitted {numMarked} new item{plural} to be purchased for {projectName}. *<{projectSheetUrl}|View Items>*'
       ],
       channelWebhooks: [OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
@@ -174,7 +174,7 @@ var STATUSES_DATA = {
       OPTS.ITEM_COLUMNS.NAME,
       OPTS.ITEM_COLUMNS.SUPPLIER,
       OPTS.ITEM_COLUMNS.LINK,
-      OPTS.ITEM_COLUMNS.PRICE,
+      OPTS.ITEM_COLUMNS.UNIT_PRICE,
       OPTS.ITEM_COLUMNS.QUANTITY,
     ]
   },
@@ -185,10 +185,10 @@ var STATUSES_DATA = {
       selected: 'Mark selected items as submitted',
     },
     slack: {
-      emoji: ':large_blue_circle:',
+      emoji: ':white_circle:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        '{emoji} {userTags}: {userFullName} marked {numMarked} items for {projectName} as *submitted* to Student Government. *<View Items|{projectSheetUrl}>*'
+        '{emoji} {userTags}: {userFullName} marked {numMarked} item{plural} for {projectName} as *submitted* to Student Government. *<{projectSheetUrl}|View Items>*'
       ],
       channelWebhooks: [OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
@@ -209,10 +209,10 @@ var STATUSES_DATA = {
       selected: 'Mark selected items as approved',
     },
     slack: {
-      emoji: ':large_blue_circle:',
+      emoji: ':white_circle:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        '{emoji} {userTags}: {userFullName} marked {numMarked} items for {projectName} as *approved* by Student Government. *<View Items|{projectSheetUrl}>*'
+        '{emoji} {userTags}: {userFullName} marked {numMarked} item{plural} for {projectName} as *approved* by Student Government. *<{projectSheetUrl}|View Items>*'
       ],
       channelWebhooks: [OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
@@ -229,11 +229,11 @@ var STATUSES_DATA = {
       selected: 'Mark selected items as awaiting pickup',
     },
     slack: {
-      emoji: ':white_circle:',
+      emoji: ':large_blue_circle:',
       targetUsers: OPTS.SLACK.TARGET_USERS.CHANNEL,
       messageTemplates: [
-        '{emoji} {userTags}: React with ' + OPTS.KYBER_TASK_REACTION + ' to the following message if you\'re going to pickup the items:',
-        '{userFullName} marked {numMarked} item(s) for {projectName} as recieved by SOAR. *<View Items|{projectSheetUrl}>*'
+        '{userTags}: React with ' + OPTS.SLACK.KYBER_TASK_REACTION + ' to the following message if you\'re going to pickup the items:',
+        '{emoji} {userFullName} marked {numMarked} item{plural} for {projectName} as recieved by SOAR. *<{projectSheetUrl}|View Items>*'
       ],
       channelWebhooks: [OPTS.SLACK.WEBHOOKS.RECIEVING],
     },
@@ -250,10 +250,10 @@ var STATUSES_DATA = {
       selected: 'Mark selected items as recieved',
     },
     slack: {
-      emoji: ':large_blue_circle:',
+      emoji: ':white_circle:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        '{emoji} {userTags}: {userFullName} marked {numMarked} item(s) for {projectName} as recieved. *<View Items|{projectSheetUrl}>*'
+        '{emoji} {userTags}: {userFullName} marked {numMarked} item{plural} for {projectName} as recieved. *<{projectSheetUrl}|View Items>*'
       ],
       channelWebhooks: [OPTS.SLACK.WEBHOOKS.PURCHASING, OPTS.SLACK.WEBHOOKS.RECIEVING],
     },
@@ -272,7 +272,7 @@ var STATUSES_DATA = {
       emoji: ':red_circle:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        '{emoji} {userTags}: {userFullName} marked {numMarked} items for {projectName} as *denied* (_see comments in database_). *<View Items|{projectSheetUrl}>*'
+        '{emoji} {userTags}: {userFullName} marked {numMarked} item{plural} for {projectName} as *denied* (_see comments in database_). *<{projectSheetUrl}|View Items>*'
       ],
       channelWebhooks: [OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
@@ -294,7 +294,7 @@ var STATUSES_DATA = {
       emoji: ':black_circle:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        '{emoji} {userTags}: {userFullName} marked {numMarked} items for {projectName} as *awaiting information* (_see comments in database_). *<View Items|{projectSheetUrl}>*'
+        '{emoji} {userTags}: {userFullName} marked {numMarked} item{plural} for {projectName} as *awaiting information* (_see comments in database_). *<{projectSheetUrl}|View Items>*'
       ],
       channelWebhooks: [OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
@@ -339,7 +339,8 @@ function buildSlackMessages(
 
       case OPTS.SLACK.TARGET_USERS.OFFICERS:
         var officerEmails = getNamedRangeValues(OPTS.NAMED_RANGES.APPROVED_OFFICERS);
-        var officerUserTags = officerEmails.map(getSlackTagByEmail);
+        var officerUserTags = officerEmails.map(getSlackTagByEmail)
+        .filter(function(slackTag) {return slackTag != '';});
         targetUserTagsString = makeListFromArray(officerUserTags, '');
         break;
 
@@ -356,7 +357,8 @@ function buildSlackMessages(
         .replace('{userFullName}', userFullName)
         .replace('{numMarked}', numMarked.toString())
         .replace('{projectName}', projectName)
-        .replace('{projectSheetUrl', projectSheetUrl);
+        .replace('{projectSheetUrl}', projectSheetUrl)
+        .replace('{plural}', numMarked !== 1 ? 's' : '');
   });
 }
 
@@ -449,7 +451,7 @@ function successNotification(message) {
 }
 
 /**
- * Returns the current user's information from the storage sheet, or prompts for it,
+ * Returns the current user's information from the storage sheet, or (prompt)s for it,
  * or returns it from the local cache if it's been asked before.
  * @returns {{slackId:string,fullName:string,email:string,isFinancialOfficer:boolean}}
  * Information about the user.
@@ -529,10 +531,11 @@ function getSlackIdByEmail(email) {
 /**
  * Wrapper for `getSlackIdByEmail` that adds tagging formatting.
  * @param {string} email Email address of the person to look for.
- * @returns {string} The Slack ID or '<null>' if no match.
+ * @returns {string} The Slack ID or '' if no match.
  */
 function getSlackTagByEmail(email) {
-  return '<' + getSlackIdByEmail(email) + '>';
+  var slackId = getSlackIdByEmail(email);
+  return slackId ? '<@' + getSlackIdByEmail(email) + '>' : '';
 }
 
 /**
@@ -708,7 +711,7 @@ function markItems(newStatus, markAll) {
       // minus 1 to convert from 1-based Sheets column number to 0-based array index
       if(!isCurrentStatusAllowed(row[OPTS.ITEM_COLUMNS.STATUS.index - 1].toString(), newStatus)) continue;
 
-      // Otherwise validate. If a single row is invalid, quit both loops
+      // Otherwise validate. If a single row is invalid, quit both loo[p]s
       if(!validateRow(row, newStatus)) {
         allRowsValid = false;
         break selectionsLoop;
@@ -776,7 +779,7 @@ function markItems(newStatus, markAll) {
           dateColumnValues[currentValuesRowIndex][0] = currentDate;
         }
 
-        if(fillDefaultValues) {
+        if(newStatus.fillInDefaults) {
           if(accountColumnValues[currentValuesRowIndex][0].toString() === '') {
             accountColumnValues[currentValuesRowIndex][0] =
                 OPTS.DEFAULT_VALUES.ACCOUNT_NAME;
@@ -802,13 +805,13 @@ function markItems(newStatus, markAll) {
     if(newStatus.columns.user) userColumn.setValues(userColumnValues);
     if(newStatus.columns.date) dateColumn.setValues(dateColumnValues);
 
-    if(fillDefaultValues) {
+    if(newStatus.fillInDefaults) {
       accountColumn.setValues(accountColumnValues);
       categoryColumn.setValues(categoryColumnValues);
     }
 
     /** All of the possible 'from' statuses, but with double quotes around them. */
-    var quotedFromStatuses = OPTS.ALLOWED_PREV_STATUSES[newStatus].map(wrapInDoubleQuotes);
+    var quotedFromStatuses = newStatus.allowedPrevious.map(wrapInDoubleQuotes);
 
     successNotification(numMarked + ' items marked from '
         + makeListFromArray(quotedFromStatuses, 'or')
