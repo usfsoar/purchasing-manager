@@ -495,7 +495,7 @@ var getCurrentUserSlackId = (function() {
         }
       }
 
-      cache.slackId = ui.prompt(OPTS.UI.SLACK_ID_PROMPT);
+      cache.slackId = SpreadsheetApp.getUi().prompt(OPTS.UI.SLACK_ID_PROMPT);
       userSheet.appendRow([email, cache.slackId]);
       return cache.slackId;
     }
@@ -558,7 +558,7 @@ var getCurrentUserFullName = (function() {
         }
       }
 
-      cache.fullName = ui.prompt(OPTS.UI.FULL_NAME_PROMPT);
+      cache.fullName = SpreadsheetApp.getUi().prompt(OPTS.UI.FULL_NAME_PROMPT);
       userSheet.appendRow([email, cache.fullName]);
       return cache.fullName;
     }
