@@ -418,20 +418,20 @@ function buildAndAddCustomMenu() {
 
   var customMenu = SpreadsheetApp.getUi()
     .createMenu(OPTS.CUSTOM_MENU.NAME)
-    .addItem(STATUSES_DATA.NEW.ACTION_TEXT.ALL, markAllNew.name)
-    .addItem(STATUSES_DATA.NEW.ACTION_TEXT.SELECTED, markSelectedNew.name)
+    .addItem(STATUSES_DATA.NEW.actionText.all, markAllNew.name)
+    .addItem(STATUSES_DATA.NEW.actionText.selected, markSelectedNew.name)
     .addSeparator()
-    .addItem(STATUSES_DATA.RECIEVED.ACTION_TEXT.SELECTED, markSelectedRecieved.name);
+    .addItem(STATUSES_DATA.RECIEVED.actionText.selected, markSelectedRecieved.name);
 
   if (verifyFinancialOfficer()) {
     customMenu
       .addSeparator()
-      .addItem(STATUSES_DATA.SUBMITTED.ACTION_TEXT.SELECTED, markSelectedSubmitted.name)
-      .addItem(STATUSES_DATA.APPROVED.ACTION_TEXT.SELECTED, markSelectedApproved.name)
-      .addItem(STATUSES_DATA.AWAITING_PICKUP.ACTION_TEXT.SELECTED, markSelectedAwaitingPickup.name)
+      .addItem(STATUSES_DATA.SUBMITTED.actionText.selected, markSelectedSubmitted.name)
+      .addItem(STATUSES_DATA.APPROVED.actionText.selected, markSelectedApproved.name)
+      .addItem(STATUSES_DATA.AWAITING_PICKUP.actionText.selected, markSelectedAwaitingPickup.name)
       .addSeparator()
-      .addItem(STATUSES_DATA.AWAITING_INFO.ACTION_TEXT.SELECTED, markSelectedAwaitingInfo.name)
-      .addItem(STATUSES_DATA.DENIED.ACTION_TEXT.SELECTED, markSelectedDenied.name);
+      .addItem(STATUSES_DATA.AWAITING_INFO.actionText.selected, markSelectedAwaitingInfo.name)
+      .addItem(STATUSES_DATA.DENIED.actionText.selected, markSelectedDenied.name);
   }
 
   customMenu.addToUi();
@@ -699,7 +699,8 @@ function getColumnRange(columnNumber) {
  * attribution columns.
  * @param {Status} newStatus The object representing the status to change the
  * selected items to.
- * @param {boolean} [markAll] If true, mark all possible rows, else mark selected.
+ * @param {boolean} [markAll=false] If truthy, mark all possible rows, else mark
+ * selected.
  * @returns {void}
  */
 function markItems(newStatus, markAll) {
@@ -964,72 +965,40 @@ function getProjectNameFromSheetName(sheetName) {
 
 /** Mark the selected items in the sheet as new. */
 function markSelectedNew() {
-  markItems(
-      OPTS.STATUSES.NEW,
-      OPTS.ITEM_COLUMNS.REQUEST_EMAIL,
-      OPTS.ITEM_COLUMNS.REQUEST_DATE,
-      false);
+  markItems(OPTS.STATUSES.NEW);
 }
 
 /** Mark all possible items in the sheet as new. */
 function markAllNew() {
-  markItems(
-      OPTS.STATUSES.NEW,
-      OPTS.ITEM_COLUMNS.REQUEST_EMAIL,
-      OPTS.ITEM_COLUMNS.REQUEST_DATE,
-      true);
+  markItems(OPTS.STATUSES.NEW, true);
 }
 
 /** Mark selected items in the sheet as recieved. */
 function markSelectedRecieved() {
-  markItems(
-      OPTS.STATUSES.RECIEVED,
-      OPTS.ITEM_COLUMNS.RECIEVE_EMAIL,
-      OPTS.ITEM_COLUMNS.RECIEVE_DATE,
-      false);
+  markItems(OPTS.STATUSES.RECIEVED);
 }
 
 /** Mark selected items in the sheet as submitted. */
 function markSelectedSubmitted() {
-  markItems(
-      OPTS.STATUSES.SUBMITTED,
-      OPTS.ITEM_COLUMNS.OFFICER_EMAIL,
-      OPTS.ITEM_COLUMNS.SUBMIT_DATE,
-      false);
+  markItems(OPTS.STATUSES.SUBMITTED);
 }
 
 /** Mark selected items in the sheet as approved. */
 function markSelectedApproved() {
-  markItems(
-      OPTS.STATUSES.APPROVED,
-      null,
-      OPTS.ITEM_COLUMNS.UPDATE_DATE,
-      false);
+  markItems(OPTS.STATUSES.APPROVED);
 }
 
 /** Mark selected items in the sheet as arrived / awaiting pickup. */
 function markSelectedAwaitingPickup() {
-  markItems(
-      OPTS.STATUSES.AWAITING_PICKUP,
-      null,
-      OPTS.ITEM_COLUMNS.ARRIVE_DATE,
-      false);
+  markItems(OPTS.STATUSES.AWAITING_PICKUP);
 }
 
 /** Mark selected items in the sheet as awaiting info. */
 function markSelectedAwaitingInfo() {
-  markItems(
-      OPTS.STATUSES.AWAITING_INFO,
-      OPTS.ITEM_COLUMNS.OFFICER_EMAIL,
-      OPTS.ITEM_COLUMNS.UPDATE_DATE,
-      false);
+  markItems(OPTS.STATUSES.AWAITING_INFO);
 }
 
 /** Mark selected items in the sheet as denied. */
 function markSelectedDenied() {
-  markItems(
-      OPTS.STATUSES.DENIED,
-      OPTS.ITEM_COLUMNS.OFFICER_EMAIL,
-      OPTS.ITEM_COLUMNS.UPDATE_DATE,
-      false);
+  markItems(OPTS.STATUSES.DENIED);
 }
