@@ -965,40 +965,40 @@ function getProjectNameFromSheetName(sheetName) {
 
 /** Mark the selected items in the sheet as new. */
 function markSelectedNew() {
-  markItems(OPTS.STATUSES.NEW);
+  markItems(STATUSES_DATA.NEW);
 }
 
 /** Mark all possible items in the sheet as new. */
 function markAllNew() {
-  markItems(OPTS.STATUSES.NEW, true);
+  markItems(STATUSES_DATA.NEW, true);
 }
 
 /** Mark selected items in the sheet as recieved. */
 function markSelectedRecieved() {
-  markItems(OPTS.STATUSES.RECIEVED);
+  markItems(STATUSES_DATA.RECIEVED);
 }
 
 /** Mark selected items in the sheet as submitted. */
 function markSelectedSubmitted() {
-  markItems(OPTS.STATUSES.SUBMITTED);
+  markItems(STATUSES_DATA.SUBMITTED);
 }
 
 /** Mark selected items in the sheet as approved. */
 function markSelectedApproved() {
-  markItems(OPTS.STATUSES.APPROVED);
+  markItems(STATUSES_DATA.APPROVED);
 }
 
 /** Mark selected items in the sheet as arrived / awaiting pickup. */
 function markSelectedAwaitingPickup() {
-  markItems(OPTS.STATUSES.AWAITING_PICKUP);
+  markItems(STATUSES_DATA.AWAITING_PICKUP);
 }
 
 /** Mark selected items in the sheet as awaiting info. */
 function markSelectedAwaitingInfo() {
-  markItems(OPTS.STATUSES.AWAITING_INFO);
+  markItems(STATUSES_DATA.AWAITING_INFO);
 }
 
 /** Mark selected items in the sheet as denied. */
 function markSelectedDenied() {
-  markItems(OPTS.STATUSES.DENIED);
+  markItems(STATUSES_DATA.DENIED);
 }
