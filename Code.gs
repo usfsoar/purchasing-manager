@@ -368,33 +368,6 @@ function onOpen() {
 }
 
 /**
- * Verify whether or not the current user is an approved financial officer.
- * After first run, uses cache to avoid having to pull the range again.
- * @returns {boolean} true if the current user is approved.
- */
-var verifyFinancialOfficer = (function() {
-  var cache = {
-    verified: /** @type {?boolean} */  (null),
-  };
-
-  return function() {
-    if(cache.verified === null) {
-      cache.verified = false;
-      var email = Session.getActiveUser().getEmail();
-
-      if(email !== ''
-        && getNamedRangeValues(OPTS.NAMED_RANGES.APPROVED_OFFICERS)
-            .indexOf(email) !== -1
-      ) {
-        cache.verified = true;
-      }
-    }
-
-    return /** @type {boolean} */ (cache.verified);
-  };
-})();
-
-/**
  * Get the list of non-empty values in the named range.
  * @returns {string[]} Unordered array of values, flattened into a 1-dimensional
  * array.
@@ -428,7 +401,7 @@ function buildAndAddCustomMenu() {
     .addSeparator()
     .addItem(STATUSES_DATA.RECIEVED.actionText.selected, markSelectedRecieved.name);
 
-  if (verifyFinancialOfficer()) {
+  if (getCurrentUserInfo().verified) {
     customMenu
       .addSeparator()
       .addItem(STATUSES_DATA.SUBMITTED.actionText.selected, markSelectedSubmitted.name)
@@ -476,38 +449,61 @@ function successNotification(message) {
 }
 
 /**
- * Returns the current user's slack ID from the storage sheet, or prompts for it,
+ * Returns the current user's information from the storage sheet, or prompts for it,
  * or returns it from the local cache if it's been asked before.
- * @returns {string} The user's Slack ID.
+ * @returns {{slackId:string,fullName:string,email:string,isFinancialOfficer:boolean}}
+ * Information about the user.
  */
-var getCurrentUserSlackId = (function() {
+var getCurrentUserInfo = (function() {
+  var currentEmail = Session.getActiveUser.getEmail();
   var cache = {
     slackId: /** @type {?string} */  (null),
+    fullName: /** @type {?string} */  (null),
+    isFinancialOfficer: verifyFinancialOfficer(currentEmail),
+    email: currentEmail,
   };
 
   return function() {
-    if(cache.slackId === null) {
+    if(cache.email !== null && (cache.slackId === null || cache.fullName == null)) {
       var userSheet = SpreadsheetApp
           .getActiveSpreadsheet()
           .getSheetByName(OPTS.SHEET_NAMES.USERS);
       var userData = userSheet.getDataRange().getValues();
-      var email = Session.getActiveUser().getEmail();
 
+      var userDataFound = false;
       for(var i = 1; i < userData.length; i++) {
         if(userData[i][0] === email) {
           cache.slackId = userData[i][1];
-          return cache.slackId;
+          cache.fullName = userData[i][2];
+          userDataFound = true;
+          break;
         }
       }
 
-      cache.slackId = SpreadsheetApp.getUi().prompt(OPTS.UI.SLACK_ID_PROMPT);
-      userSheet.appendRow([email, cache.slackId]);
-      return cache.slackId;
+      if(!userDataFound) {
+        cache.slackId = SpreadsheetApp.getUi().prompt(OPTS.UI.SLACK_ID_PROMPT).getResponseText();
+        cache.fullName = SpreadsheetApp.getUi().prompt(OPTS.UI.FULL_NAME_PROMPT).getResponseText();
+        userSheet.appendRow([email, cache.slackId]);
+      }
     }
 
-    return /** @type {string} */ (cache.slackId);
+    return cache;
   };
 })();
+
+
+/**
+ * Verify whether or not the email provided is one of an approved financial officer.
+ * After first run, uses cache to avoid having to pull the range again.
+ * @returns {boolean} true if the current user is approved.
+ */
+function verifyFinancialOfficer() {
+  if(email && getNamedRangeValues(OPTS.NAMED_RANGES.APPROVED_OFFICERS)
+      .indexOf(email) !== -1) {
+    return true;
+  }
+  return false;
+}
 
 /**
  * Returns the Slack ID that matches the email address provided.
@@ -537,40 +533,6 @@ function getSlackIdByEmail(email) {
 function getSlackTagByEmail(email) {
   return '<' + getSlackIdByEmail(email) + '>';
 }
-
-/**
- * Returns the current user's full name from the storage sheet, or prompts for it,
- * or returns it from the local cache if it's been asked before.
- * @returns {string} The user's full name.
- */
-var getCurrentUserFullName = (function() {
-  var cache = {
-    fullName: /** @type {?string} */  (null),
-  };
-
-  return function() {
-    if(cache.fullName === null) {
-      var userSheet = SpreadsheetApp
-          .getActiveSpreadsheet()
-          .getSheetByName(OPTS.SHEET_NAMES.USERS);
-      var userData = userSheet.getDataRange().getValues();
-      var email = Session.getActiveUser().getEmail();
-
-      for(var i = 1; i < userData.length; i++) {
-        if(userData[i][0] === email) {
-          cache.fullName = userData[i][2];
-          return cache.fullName;
-        }
-      }
-
-      cache.fullName = SpreadsheetApp.getUi().prompt(OPTS.UI.FULL_NAME_PROMPT);
-      userSheet.appendRow([email, cache.fullName]);
-      return cache.fullName;
-    }
-
-    return /** @type {string} */ (cache.fullName);
-  };
-})();
 
 /**
  * Turn an array into a human-readable list.
@@ -709,14 +671,14 @@ function getColumnRange(columnNumber) {
  * @returns {void}
  */
 function markItems(newStatus, markAll) {
-  if(!checkIfProjectSheet() || !getCurrentUserSlackId() || !getCurrentUserFullName()) return;
+  if(!checkIfProjectSheet()) return;
 
   /** All the ranges in the sheet if `markAll` is set, else just the selected. */
   var selectedRanges = markAll ? getAllRows() : getSelectedRows();
 
   var numMarked = 0;
-  var currentUserEmail = Session.getActiveUser().getEmail();
-  var currentUserFullName = getCurrentUserFullName();
+  var currentUserEmail = getCurrentUserInfo().email;
+  var currentUserFullName = getCurrentUserInfo().fullName;
   var currentDate = new Date();
 
   var currentSheet = SpreadsheetApp.getActiveSheet();
@@ -859,7 +821,7 @@ function markItems(newStatus, markAll) {
       numMarked,
       projectName,
       projectSheetUrl
-    )
+    );
   }
 }
 
