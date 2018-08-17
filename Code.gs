@@ -128,6 +128,8 @@ var OPTS = {
  * @prop {?Column} columns.date Column to input action date into.
  * @prop {?(Column[])} requiredColumns Optional required columns needed to perform actions.
  * @prop {?(Column[])} reccomendedColumns Optional reccomended columns desired to perform actions.
+ * @prop {?boolean} fillInDefaults If true, will fill default values for Account
+ * and Cateegory when those are applied.
  */
 
 /**
@@ -197,7 +199,8 @@ var STATUSES_DATA = {
     reccomendedColumns: [
       OPTS.ITEM_COLUMNS.ACCOUNT,
       OPTS.ITEM_COLUMNS.CATEGORY,
-    ]
+    ],
+    fillInDefaults: true,
   },
   APPROVED: {
     text: 'Approved',
@@ -216,7 +219,8 @@ var STATUSES_DATA = {
     columns: {
       user: null,
       date: OPTS.ITEM_COLUMNS.UPDATE_DATE,
-    }
+    },
+    fillInDefaults: true,
   },
   AWAITING_PICKUP: {
     text: 'Awaiting Pickup',
@@ -236,7 +240,8 @@ var STATUSES_DATA = {
     columns: {
       user: null,
       date: OPTS.ITEM_COLUMNS.ARRIVE_DATE,
-    }
+    },
+    fillInDefaults: true,
   },
   RECIEVED: {
     text: 'Recieved',
@@ -310,7 +315,7 @@ var STATUSES_DATA = {
  * @param {string[]} requestors Emails of people who requested the items
  * affected by this action.
  * @param {number} numMarked Number of items affected by this action.
- * @param {string} projectName Name of the relevant projec.
+ * @param {string} projectName Name of the relevant project.
  * @param {string} projectSheetUrl Link to the relevant project's sheet in the
  * database.
  * @param {boolean} [dontTagUsers] If truthy, won't add user tags.
@@ -534,9 +539,9 @@ function getSlackTagByEmail(email) {
 }
 
 /**
- * Returns the current user's slack ID from the storage sheet, or prompts for it,
+ * Returns the current user's full name from the storage sheet, or prompts for it,
  * or returns it from the local cache if it's been asked before.
- * @returns {string} The user's Slack ID.
+ * @returns {string} The user's full name.
  */
 var getCurrentUserFullName = (function() {
   var cache = {
@@ -704,13 +709,20 @@ function getColumnRange(columnNumber) {
  * @returns {void}
  */
 function markItems(newStatus, markAll) {
-  if(!checkIfProjectSheet() || !getCurrentUserFullName() || !getCurrentUserSlackId()) return;
+  if(!checkIfProjectSheet() || !getCurrentUserSlackId() || !getCurrentUserFullName()) return;
 
   /** All the ranges in the sheet if `markAll` is set, else just the selected. */
   var selectedRanges = markAll ? getAllRows() : getSelectedRows();
+
   var numMarked = 0;
-  var currentUser = Session.getActiveUser().getEmail();
+  var currentUserEmail = Session.getActiveUser().getEmail();
+  var currentUserFullName = getCurrentUserFullName();
   var currentDate = new Date();
+
+  var currentSheet = SpreadsheetApp.getActiveSheet();
+  var projectName = getProjectNameFromSheetName(currentSheet.getSheetName());
+  var projectSheetUrl = SpreadsheetApp.getActiveSpreadsheet().getUrl()
+      + '#gid=' + currentSheet.getSheetId();
 
   // We would filter out all the rows with disallowed current statuses here,
   // rather than skipping them in both of these loops, but that would require
@@ -756,12 +768,8 @@ function markItems(newStatus, markAll) {
       dateColumnValues = dateColumn.getValues();
     }
 
-    // TODO: move data to STATUSES_DATA
     var accountColumn, categoryColumn, accountColumnValues, categoryColumnValues;
-    var fillDefaultValues = newStatus.text === STATUSES_DATA.SUBMITTED.text
-        || newStatus.text === STATUSES_DATA.APPROVED.text
-        || newStatus.text === STATUSES_DATA.AWAITING_PICKUP.text;
-    if(fillDefaultValues) {
+    if(newStatus.fillInDefaults) {
       accountColumn = getColumnRange(OPTS.ITEM_COLUMNS.ACCOUNT);
       categoryColumn = getColumnRange(OPTS.ITEM_COLUMNS.CATEGORY);
       accountColumnValues = accountColumn.getValues();
@@ -793,7 +801,7 @@ function markItems(newStatus, markAll) {
         statusColumnValues[currentValuesRowIndex][0] = newStatus.text;
 
         if(newStatus.columns.user) {
-          userColumnValues[currentValuesRowIndex][0] = currentUser;
+          userColumnValues[currentValuesRowIndex][0] = currentUserEmail;
         }
         if(newStatus.columns.date) {
           dateColumnValues[currentValuesRowIndex][0] = currentDate;
@@ -836,7 +844,7 @@ function markItems(newStatus, markAll) {
 
 /**
  * Check if the current status of the row is in the valid statuses list.
- * @param {string} rowCurrentStatus The current status of the row.
+ * @param {string} currentStatusText The current status of the row.
  * @param {Status} newStatus The status object to check for changing to.
  * @returns {boolean} True if the current status of the row allows it to be
  * changed to the newStatus.
@@ -947,8 +955,8 @@ function slackNotifyItems(
 }
 
 /**
- *
- * @param sheetName
+ * Get the full name of the project that matches the name of the sheet.
+ * @param {string} sheetName Name of the project's sheet.
  */
 function getProjectNameFromSheetName(sheetName) {
   var projectsData = SpreadsheetApp
