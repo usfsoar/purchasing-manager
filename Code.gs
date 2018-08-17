@@ -83,6 +83,23 @@ var OPTS = {
     WEBHOOKS: {
       PURCHASING: 'https://hooks.slack.com/services/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',
       RECIEVING: 'https://hooks.slack.com/services/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'
+    },
+    KYBER_TASK_REACTION: ':ballot_box_with_check:',
+    /**
+     * Possible cases for target users to tag in messages.
+     * @enum {string}
+     * @typedef {'CHANNEL'|'REQUESTORS'|'OFFICERS'} EnumTARGET_USERS
+     */
+    TARGET_USERS: {
+      /** The entire channel. */
+      CHANNEL: 'CHANNEL',
+      /**
+       * Just the people who requested said items (can be multiple if multiple)
+       * items are affected.
+       */
+      REQUESTORS: 'REQUESTORS',
+      /** Just all the listed Financial Officers. */
+      OFFICERS: 'OFFICERS',
     }
   },
 };
@@ -95,8 +112,17 @@ var OPTS = {
  * @prop {?string} actionText.selected Menu item text for marking just selected.
  * @prop {?string} actionText.all Menu item text for marking all possible.
  * @prop {Object} slack Data for sending Slack notifications.
- * @prop {string} slack.messageTemplate Template for sending Slack messages.
- * @prop {string} slack.channelWebhook Webhook to send Slack messages to.
+ * @prop {string[]} slack.messageTemplates Templates for sending Slack messages.
+ * Will send a Slack message per string. Will replace {emoji} with the emoji,
+ * {userTags} with the target user tags, {userFullName} with full name of
+ * submitter, {numMarked} with the number of items marked, {projectName} with
+ * the name of the project, and {projectSheetUrl} with the link to the project
+ * sheet.
+ * @prop {string[]} slack.channelWebhooks Webhooks to send Slack messages to.
+ * Will only tag targetUsers in the first channel provided, to avoid annoying.
+ * @prop {string} slack.emoji Emoji to send with slack message.
+ * @prop {EnumTARGET_USERS} slack.targetUsers String representing a user group
+ * to tag in Slack messages (only in the first channel the message is sent to).
  * @prop {Object} columns Columns to input data into.
  * @prop {?Column} columns.user Column to input attribution email address into.
  * @prop {?Column} columns.date Column to input action date into.
@@ -116,10 +142,7 @@ var STATUSES_DATA = {
     text: '',
     allowedPrevious: [],
     actionText: {},
-    slack: {
-      messageTemplate: '',
-      channelWebhook: OPTS.SLACK.WEBHOOKS.PURCHASING,
-    },
+    slack: {},
     columns: {
       user: null,
       date: null,
@@ -133,8 +156,13 @@ var STATUSES_DATA = {
       all: 'Submit all new items',
     },
     slack: {
-      messageTemplate: '',
-      channelWebhook: OPTS.SLACK.WEBHOOKS.PURCHASING,
+      emoji: ':white_circle:',
+      targetUsers: OPTS.SLACK.TARGET_USERS.OFFICERS,
+      messageTemplates: [
+        '{emoji} {userTags}: React with ' + OPTS.KYBER_TASK_REACTION + ' to the following message if you\'re going to review / submit the items:',
+        '{userFullName} has submitted {numMarked} new items to be purchased for {projectName}. *<View Items|{projectSheetUrl}>*'
+      ],
+      channelWebhooks: [OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       user: OPTS.ITEM_COLUMNS.REQUEST_EMAIL,
@@ -155,8 +183,12 @@ var STATUSES_DATA = {
       selected: 'Mark selected items as submitted',
     },
     slack: {
-      messageTemplate: '',
-      channelWebhook: OPTS.SLACK.WEBHOOKS.PURCHASING,
+      emoji: ':large_blue_circle:',
+      targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
+      messageTemplates: [
+        '{emoji} {userTags}: {userFullName} marked {numMarked} items for {projectName} as *submitted* to Student Government. *<View Items|{projectSheetUrl}>*'
+      ],
+      channelWebhooks: [OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       user: OPTS.ITEM_COLUMNS.OFFICER_EMAIL,
@@ -174,8 +206,12 @@ var STATUSES_DATA = {
       selected: 'Mark selected items as approved',
     },
     slack: {
-      messageTemplate: '',
-      channelWebhook: OPTS.SLACK.WEBHOOKS.PURCHASING,
+      emoji: ':large_blue_circle:',
+      targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
+      messageTemplates: [
+        '{emoji} {userTags}: {userFullName} marked {numMarked} items for {projectName} as *approved* by Student Government. *<View Items|{projectSheetUrl}>*'
+      ],
+      channelWebhooks: [OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       user: null,
@@ -189,8 +225,13 @@ var STATUSES_DATA = {
       selected: 'Mark selected items as awaiting pickup',
     },
     slack: {
-      messageTemplate: '',
-      channelWebhook: OPTS.SLACK.WEBHOOKS.RECIEVING,
+      emoji: ':white_circle:',
+      targetUsers: OPTS.SLACK.TARGET_USERS.CHANNEL,
+      messageTemplates: [
+        '{emoji} {userTags}: React with ' + OPTS.KYBER_TASK_REACTION + ' to the following message if you\'re going to pickup the items:',
+        '{userFullName} marked {numMarked} item(s) for {projectName} as recieved by SOAR. *<View Items|{projectSheetUrl}>*'
+      ],
+      channelWebhooks: [OPTS.SLACK.WEBHOOKS.RECIEVING],
     },
     columns: {
       user: null,
@@ -204,8 +245,12 @@ var STATUSES_DATA = {
       selected: 'Mark selected items as recieved',
     },
     slack: {
-      messageTemplate: '',
-      channelWebhook: OPTS.SLACK.WEBHOOKS.RECIEVING,
+      emoji: ':large_blue_circle:',
+      targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
+      messageTemplates: [
+        '{emoji} {userTags}: {userFullName} marked {numMarked} item(s) for {projectName} as recieved. *<View Items|{projectSheetUrl}>*'
+      ],
+      channelWebhooks: [OPTS.SLACK.WEBHOOKS.PURCHASING, OPTS.SLACK.WEBHOOKS.RECIEVING],
     },
     columns: {
       user: OPTS.ITEM_COLUMNS.RECIEVE_EMAIL,
@@ -219,8 +264,12 @@ var STATUSES_DATA = {
       selected: 'Deny selected items',
     },
     slack: {
-      messageTemplate: '',
-      channelWebhook: OPTS.SLACK.WEBHOOKS.PURCHASING,
+      emoji: ':red_circle:',
+      targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
+      messageTemplates: [
+        '{emoji} {userTags}: {userFullName} marked {numMarked} items for {projectName} as *denied* (_see comments in database_). *<View Items|{projectSheetUrl}>*'
+      ],
+      channelWebhooks: [OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       user: OPTS.ITEM_COLUMNS.UPDATE_DATE,
@@ -237,8 +286,12 @@ var STATUSES_DATA = {
       selected: 'Request more information for selected items'
     },
     slack: {
-      messageTemplate: '',
-      channelWebhook: OPTS.SLACK.WEBHOOKS.PURCHASING,
+      emoji: ':black_circle:',
+      targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
+      messageTemplates: [
+        '{emoji} {userTags}: {userFullName} marked {numMarked} items for {projectName} as *awaiting information* (_see comments in database_). *<View Items|{projectSheetUrl}>*'
+      ],
+      channelWebhooks: [OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       user: OPTS.ITEM_COLUMNS.UPDATE_DATE,
@@ -249,6 +302,58 @@ var STATUSES_DATA = {
     ]
   }
 };
+
+/**
+ * Build normal strings from the status' templates.
+ * @param {Status} statusData Data for the target status.
+ * @param {string} userFullName Full Name of the current user.
+ * @param {string[]} requestors Emails of people who requested the items
+ * affected by this action.
+ * @param {number} numMarked Number of items affected by this action.
+ * @param {string} projectName Name of the relevant projec.
+ * @param {string} projectSheetUrl Link to the relevant project's sheet in the
+ * database.
+ * @param {boolean} [dontTagUsers] If truthy, won't add user tags.
+ * @returns {string[]} Filled in message strings.
+ */
+function buildSlackMessages(
+    statusData,
+    userFullName,
+    requestors,
+    numMarked,
+    projectName,
+    projectSheetUrl,
+    dontTagUsers) {
+
+  if(!dontTagUsers) {
+    var targetUserTagsString = '';
+    switch(statusData.slack.targetUsers) {
+      case OPTS.SLACK.TARGET_USERS.CHANNEL:
+        targetUserTagsString = '<!channel>';
+        break;
+
+      case OPTS.SLACK.TARGET_USERS.OFFICERS:
+        var officerEmails = getNamedRangeValues(OPTS.NAMED_RANGES.APPROVED_OFFICERS);
+        var officerUserTags = officerEmails.map(getSlackTagByEmail);
+        targetUserTagsString = makeListFromArray(officerUserTags, '');
+        break;
+
+      case OPTS.SLACK.TARGET_USERS.REQUESTORS:
+        var requestorUserTags = requestors.map(getSlackTagByEmail);
+        targetUserTagsString = makeListFromArray(requestorUserTags, '');
+    }
+  }
+
+  return statusData.slack.messageTemplates.map(function(template, index) {
+    return template
+        .replace('{emoji}', statusData.slack.emoji)
+        .replace('{userTags}', !dontTagUsers ? targetUserTagsString : '')
+        .replace('{userFullName}', userFullName)
+        .replace('{numMarked}', numMarked.toString())
+        .replace('{projectName}', projectName)
+        .replace('{projectSheetUrl', projectSheetUrl);
+  });
+}
 
 /**
  * Global that represents whether the user is authorized as a financial officer.
@@ -401,7 +506,7 @@ var getCurrentUserSlackId = (function() {
 
 /**
  * Returns the Slack ID that matches the email address provided.
- * @param {string} email
+ * @param {string} email Email address of the person to look for.
  * @returns {?string} The Slack ID or null if no match.
  */
 function getSlackIdByEmail(email) {
@@ -417,6 +522,16 @@ function getSlackIdByEmail(email) {
   }
 
   return null;
+}
+
+/**
+ * Wrapper for `getSlackIdByEmail` that adds tagging formatting.
+ * @param {string} email Email address of the person to look for.
+ * @returns {string} The Slack ID or '<null>' if no match.
+ */
+ */
+function getSlackTagByEmail(email) {
+  return '<' + getSlackIdByEmail(email) + '>';
 }
 
 /**
@@ -788,27 +903,47 @@ function sendSlackMessage(message, webhook) {
 }
 
 /**
- *
- * @param newStatus
- * @param numMarked
- * @param relatedPeople  COULD BE FINANCIAL OFFICERS!
- * @param projectSheetName
+ * Build normal strings from the status' templates.
+ * @param {Status} statusData Data for the target status.
+ * @param {string} userFullName Full Name of the current user.
+ * @param {string[]} requestors Emails of people who requested the items
+ * affected by this action.
+ * @param {number} numMarked Number of items affected by this action.
+ * @param {string} projectName Name of the relevant projec.
+ * @param {string} projectSheetUrl Link to the relevant project's sheet in the
+ * databse.
+ * @returns {string[]} Filled in message strings.
  */
-function slackNotifyItems(newStatus, numMarked, relatedPeople, projectSheetName) {
-  var userFullName = getCurrentUserFullName();
-  var targetSlackIds = makeListFromArray(relatedPeople.map(function (email) {
-    return '<@' + getSlackIdByEmail + '>';
-  }), '');
-  var itemsWord = numMarked > 1 ? 'items' : 'item';
-  var projectName = getProjectNameFromSheetName(projectSheetName);
-  var targetWebHook = OPTS.SLACK.WEBHOOKS.PURCHASING;
+function slackNotifyItems(
+  statusData,
+  userFullName,
+  requestors,
+  numMarked,
+  projectName,
+  projectSheetUrl) {
+  statusData.slack.channelWebhooks.forEach(function(webhook, index) {
+    var messages = [];
+    if(index === 0) {
+      messages = buildSlackMessages(
+          statusData,
+          userFullName,
+          requestors,
+          numMarked,
+          projectName,
+          projectSheetUrl);
+    } else {
+      messages = buildSlackMessages(
+          statusData,
+          userFullName,
+          requestors,
+          numMarked,
+          projectName,
+          projectSheetUrl,
+          true);
+    }
 
-  var message = '';
-  switch(newStatus) {
-    case OPTS.STATUSES.NEW:
-      message = '';
-  }
-
+    messages.forEach(function(message) {sendSlackMessage(message, webhook);});
+  });
 }
 
 /**
