@@ -529,7 +529,6 @@ function getSlackIdByEmail(email) {
  * @param {string} email Email address of the person to look for.
  * @returns {string} The Slack ID or '<null>' if no match.
  */
- */
 function getSlackTagByEmail(email) {
   return '<' + getSlackIdByEmail(email) + '>';
 }
