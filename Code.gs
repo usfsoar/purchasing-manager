@@ -161,7 +161,7 @@ var STATUSES_DATA = {
       emoji: ':large_blue_circle:',
       targetUsers: OPTS.SLACK.TARGET_USERS.OFFICERS,
       messageTemplates: [
-        '{userTags}: React with ' + OPTS.SLACK.KYBER_TASK_REACTION + ' to the following message if you\'re going to review / submit the items:',
+        '{userTags} React with ' + OPTS.SLACK.KYBER_TASK_REACTION + ' to the following message if you\'re going to review / submit these items:',
         '{emoji} {userFullName} has submitted {numMarked} new item{plural} to be purchased for {projectName}. *<{projectSheetUrl}|View Items>*'
       ],
       channelWebhooks: [OPTS.SLACK.WEBHOOKS.PURCHASING],
@@ -188,7 +188,7 @@ var STATUSES_DATA = {
       emoji: ':white_circle:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        '{emoji} {userTags}: {userFullName} marked {numMarked} item{plural} for {projectName} as *submitted* to Student Government. *<{projectSheetUrl}|View Items>*'
+        '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *submitted* to Student Government. *<{projectSheetUrl}|View Items>*'
       ],
       channelWebhooks: [OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
@@ -212,7 +212,7 @@ var STATUSES_DATA = {
       emoji: ':white_circle:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        '{emoji} {userTags}: {userFullName} marked {numMarked} item{plural} for {projectName} as *approved* by Student Government. *<{projectSheetUrl}|View Items>*'
+        '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *approved* by Student Government. *<{projectSheetUrl}|View Items>*'
       ],
       channelWebhooks: [OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
@@ -232,8 +232,8 @@ var STATUSES_DATA = {
       emoji: ':large_blue_circle:',
       targetUsers: OPTS.SLACK.TARGET_USERS.CHANNEL,
       messageTemplates: [
-        '{userTags}: React with ' + OPTS.SLACK.KYBER_TASK_REACTION + ' to the following message if you\'re going to pickup the items:',
-        '{emoji} {userFullName} marked {numMarked} item{plural} for {projectName} as recieved by SOAR. *<{projectSheetUrl}|View Items>*'
+        '{userTags} React with ' + OPTS.SLACK.KYBER_TASK_REACTION + ' to the following message if you\'re going to pickup these items:',
+        '{emoji} {userFullName} marked {numMarked} item{plural} for {projectName} as awaiting pickup from Student Business Services in MSC4300. *<{projectSheetUrl}|View Items>*'
       ],
       channelWebhooks: [OPTS.SLACK.WEBHOOKS.RECIEVING],
     },
@@ -247,13 +247,13 @@ var STATUSES_DATA = {
     text: 'Recieved',
     allowedPrevious: ['Awaiting Pickup'],
     actionText: {
-      selected: 'Mark selected items as recieved',
+      selected: 'Mark selected items as recieved (picked up)',
     },
     slack: {
-      emoji: ':white_circle:',
+      emoji: ':heavy_check_mark:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        '{emoji} {userTags}: {userFullName} marked {numMarked} item{plural} for {projectName} as recieved. *<{projectSheetUrl}|View Items>*'
+        '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as recieved (picked up). *<{projectSheetUrl}|View Items>*'
       ],
       channelWebhooks: [OPTS.SLACK.WEBHOOKS.PURCHASING, OPTS.SLACK.WEBHOOKS.RECIEVING],
     },
@@ -272,7 +272,7 @@ var STATUSES_DATA = {
       emoji: ':red_circle:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        '{emoji} {userTags}: {userFullName} marked {numMarked} item{plural} for {projectName} as *denied* (_see comments in database_). *<{projectSheetUrl}|View Items>*'
+        '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *denied* (_see comments in database_). *<{projectSheetUrl}|View Items>*'
       ],
       channelWebhooks: [OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
@@ -285,7 +285,7 @@ var STATUSES_DATA = {
     ]
   },
   AWAITING_INFO: {
-    text: 'Awating Info',
+    text: 'Awaiting Info',
     allowedPrevious: ['New', 'Submitted', 'Denied', 'Approved', 'Recieved'],
     actionText: {
       selected: 'Request more information for selected items'
@@ -294,7 +294,7 @@ var STATUSES_DATA = {
       emoji: ':black_circle:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        '{emoji} {userTags}: {userFullName} marked {numMarked} item{plural} for {projectName} as *awaiting information* (_see comments in database_). *<{projectSheetUrl}|View Items>*'
+        '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *awaiting information* (_see comments in database_). *<{projectSheetUrl}|View Items>*'
       ],
       channelWebhooks: [OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
@@ -341,7 +341,7 @@ function buildSlackMessages(
         var officerEmails = getNamedRangeValues(OPTS.NAMED_RANGES.APPROVED_OFFICERS);
         var officerUserTags = officerEmails.map(getSlackTagByEmail)
         .filter(function(slackTag) {return slackTag != '';});
-        targetUserTagsString = makeListFromArray(officerUserTags, '');
+        targetUserTagsString = makeListFromArray(officerUserTags, 'or');
         break;
 
       case OPTS.SLACK.TARGET_USERS.REQUESTORS:
@@ -353,7 +353,7 @@ function buildSlackMessages(
   return statusData.slack.messageTemplates.map(function(template, index) {
     return template
         .replace('{emoji}', statusData.slack.emoji)
-        .replace('{userTags}', !dontTagUsers ? targetUserTagsString : '')
+        .replace('{userTags}', !dontTagUsers ? (targetUserTagsString + ':') : '')
         .replace('{userFullName}', userFullName)
         .replace('{numMarked}', numMarked.toString())
         .replace('{projectName}', projectName)
@@ -399,9 +399,7 @@ function buildAndAddCustomMenu() {
   var customMenu = SpreadsheetApp.getUi()
     .createMenu(OPTS.CUSTOM_MENU.NAME)
     .addItem(STATUSES_DATA.NEW.actionText.all, markAllNew.name)
-    .addItem(STATUSES_DATA.NEW.actionText.selected, markSelectedNew.name)
-    .addSeparator()
-    .addItem(STATUSES_DATA.RECIEVED.actionText.selected, markSelectedRecieved.name);
+    .addItem(STATUSES_DATA.NEW.actionText.selected, markSelectedNew.name);
 
   if (verifyFinancialOfficer(Session.getActiveUser().getEmail())) {
     customMenu
@@ -413,6 +411,10 @@ function buildAndAddCustomMenu() {
       .addItem(STATUSES_DATA.AWAITING_INFO.actionText.selected, markSelectedAwaitingInfo.name)
       .addItem(STATUSES_DATA.DENIED.actionText.selected, markSelectedDenied.name);
   }
+
+  customMenu
+      .addSeparator()
+      .addItem(STATUSES_DATA.RECIEVED.actionText.selected, markSelectedRecieved.name);
 
   customMenu.addToUi();
 }
@@ -792,7 +794,7 @@ function markItems(newStatus, markAll) {
 
         // Save the requestor data for notifying; avoid duplicates
         if(newStatus.slack.targetUsers === OPTS.SLACK.TARGET_USERS.REQUESTORS) {
-          pushIfNew(itemRequestors, requestorColumnValues[currentValuesRowIndex][0]);
+          pushIfNewAndTruthy(itemRequestors, requestorColumnValues[currentValuesRowIndex][0].toString());
         }
 
         numMarked++;
@@ -815,16 +817,18 @@ function markItems(newStatus, markAll) {
 
     successNotification(numMarked + ' items marked from '
         + makeListFromArray(quotedFromStatuses, 'or')
-        + ' to "' + newStatus + '."');
+        + ' to "' + newStatus.text + '."');
 
-    slackNotifyItems(
-      newStatus,
-      currentUserFullName,
-      itemRequestors,
-      numMarked,
-      projectName,
-      projectSheetUrl
-    );
+    if(numMarked !== 0) {
+      slackNotifyItems(
+        newStatus,
+        currentUserFullName,
+        itemRequestors,
+        numMarked,
+        projectName,
+        projectSheetUrl
+      );
+    }
   }
 }
 
@@ -835,8 +839,8 @@ function markItems(newStatus, markAll) {
  * @param {*} potentialNewItem
  * @return {[]}
  */
-function pushIfNew(arr, potentialNewItem) {
-  if(arr.indexOf(potentialNewItem) === -1) arr.push(potentialNewItem);
+function pushIfNewAndTruthy(arr, potentialNewItem) {
+  if(arr.indexOf(potentialNewItem) === -1 && potentialNewItem) arr.push(potentialNewItem);
   return arr;
 }
 
@@ -1007,4 +1011,37 @@ function markSelectedAwaitingInfo() {
 /** Mark selected items in the sheet as denied. */
 function markSelectedDenied() {
   markItems(STATUSES_DATA.DENIED);
+}
+
+/** Reinstate / update all the protected ranges. */
+function protectRanges() {
+  var sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
+  var financialOfficers = getNamedRangeValues(OPTS.NAMED_RANGES.APPROVED_OFFICERS);
+  var projectSheetNames = getNamedRangeValues(OPTS.NAMED_RANGES.PROJECT_SHEETS);
+  var admin = 'iansanders@mail.usf.edu';
+  var userDataSheetName = OPTS.SHEET_NAMES.USERS;
+
+  sheets.forEach(function(sheet) {
+    var sheetName = sheet.getName();
+    if(projectSheetNames.indexOf(sheetName !== -1)) {
+      var headerRangeProtection = sheet.getRange(1,1,OPTS.NUM_HEADER_ROWS,sheet.getLastColumn()).protect();
+      var calculatedPriceColumnProtection = sheet.getRange(1,OPTS.ITEM_COLUMNS.TOTAL_PRICE,sheet.getLastRow(),1).protect();
+      var protectDescription = 'This part of the sheet can only be edited by the database admin.';
+
+      headerRangeProtection.setDescription(protectDescription);
+      calculatedPriceColumnProtection.setDescription(protectDescription);
+
+      headerRangeProtection.removeEditors(headerRangeProtection.getEditors());
+      calculatedPriceColumnProtection.removeEditors(calculatedPriceColumnProtection.getEditors());
+
+      headerRangeProtection.addEditor(admin);
+      calculatedPriceColumnProtection.addEditor(admin);
+
+    } else if(sheetName !== userDataSheetName) {
+      var sheetProtection = sheet.protect();
+      sheetProtection.setDescription('Only Financial Officers may edit this sheet.');
+      sheetProtection.removeEditors(sheetProtection.getEditors());
+      sheetProtection.addEditors(financialOfficers);
+    }
+  })
 }
