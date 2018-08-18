@@ -102,6 +102,7 @@ var OPTS = {
       OFFICERS: 'OFFICERS',
     }
   },
+  ADMIN_EMAIL: 'iansanders@mail.usf.edu',
 };
 
 /**
@@ -415,6 +416,12 @@ function buildAndAddCustomMenu() {
   customMenu
       .addSeparator()
       .addItem(STATUSES_DATA.RECIEVED.actionText.selected, markSelectedRecieved.name);
+
+  if(Session.getActiveUser.getEmail() === OPTS.ADMIN_EMAIL) {
+    customMenu
+    .addSeparator()
+    .addItem('Refresh protections', protectRanges.name);
+  }
 
   customMenu.addToUi();
 }
@@ -1024,8 +1031,8 @@ function protectRanges() {
   sheets.forEach(function(sheet) {
     var sheetName = sheet.getName();
     if(projectSheetNames.indexOf(sheetName !== -1)) {
-      var headerRangeProtection = sheet.getRange(1,1,OPTS.NUM_HEADER_ROWS,sheet.getLastColumn()).protect();
-      var calculatedPriceColumnProtection = sheet.getRange(1,OPTS.ITEM_COLUMNS.TOTAL_PRICE,sheet.getLastRow(),1).protect();
+      var headerRangeProtection = sheet.getRange(1, 1, OPTS.NUM_HEADER_ROWS, sheet.getLastColumn()).protect();
+      var calculatedPriceColumnProtection = sheet.getRange(1, OPTS.ITEM_COLUMNS.TOTAL_PRICE.index, sheet.getLastRow(), 1).protect();
       var protectDescription = 'This part of the sheet can only be edited by the database admin.';
 
       headerRangeProtection.setDescription(protectDescription);
@@ -1043,5 +1050,5 @@ function protectRanges() {
       sheetProtection.removeEditors(sheetProtection.getEditors());
       sheetProtection.addEditors(financialOfficers);
     }
-  })
+  });
 }
