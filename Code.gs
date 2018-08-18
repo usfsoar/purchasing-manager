@@ -402,7 +402,9 @@ function buildAndAddCustomMenu() {
     .addItem(STATUSES_DATA.NEW.actionText.all, markAllNew.name)
     .addItem(STATUSES_DATA.NEW.actionText.selected, markSelectedNew.name);
 
-  if (verifyFinancialOfficer(Session.getActiveUser().getEmail())) {
+  var email = Session.getActiveUser().getEmail();
+
+  if (verifyFinancialOfficer(email)) {
     customMenu
       .addSeparator()
       .addItem(STATUSES_DATA.SUBMITTED.actionText.selected, markSelectedSubmitted.name)
@@ -417,10 +419,10 @@ function buildAndAddCustomMenu() {
       .addSeparator()
       .addItem(STATUSES_DATA.RECIEVED.actionText.selected, markSelectedRecieved.name);
 
-  if(Session.getActiveUser.getEmail() === OPTS.ADMIN_EMAIL) {
+  if(email === OPTS.ADMIN_EMAIL) {
     customMenu
-    .addSeparator()
-    .addItem('Refresh protections', protectRanges.name);
+      .addSeparator()
+      .addItem('Refresh protections', protectRanges.name);
   }
 
   customMenu.addToUi();
@@ -1028,9 +1030,13 @@ function protectRanges() {
   var admin = 'iansanders@mail.usf.edu';
   var userDataSheetName = OPTS.SHEET_NAMES.USERS;
 
+  SpreadsheetApp.getActiveSpreadsheet().getProtections().forEach(function(protection) {
+    protection.remove();
+  });
+
   sheets.forEach(function(sheet) {
     var sheetName = sheet.getName();
-    if(projectSheetNames.indexOf(sheetName !== -1)) {
+    if(projectSheetNames.indexOf(sheetName) === -1) {
       var headerRangeProtection = sheet.getRange(1, 1, OPTS.NUM_HEADER_ROWS, sheet.getLastColumn()).protect();
       var calculatedPriceColumnProtection = sheet.getRange(1, OPTS.ITEM_COLUMNS.TOTAL_PRICE.index, sheet.getLastRow(), 1).protect();
       var protectDescription = 'This part of the sheet can only be edited by the database admin.';
