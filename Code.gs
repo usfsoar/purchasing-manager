@@ -79,11 +79,6 @@ var OPTS = {
   },
   /** Slack API pieces */
   SLACK: {
-    /** Webhook linked to the purchasing channel */
-    WEBHOOKS: {
-      PURCHASING: 'https://hooks.slack.com/services/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',
-      RECIEVING: 'https://hooks.slack.com/services/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'
-    },
     KYBER_TASK_REACTION: ':ballot_box_with_check:',
     /**
      * Possible cases for target users to tag in messages.
@@ -165,7 +160,7 @@ var STATUSES_DATA = {
         '{userTags} React with ' + OPTS.SLACK.KYBER_TASK_REACTION + ' to the following message if you\'re going to review / submit these items:',
         '{emoji} {userFullName} has submitted {numMarked} new item{plural} to be purchased for {projectName}. *<{projectSheetUrl}|View Items>*'
       ],
-      channelWebhooks: [OPTS.SLACK.WEBHOOKS.PURCHASING],
+      channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       user: OPTS.ITEM_COLUMNS.REQUEST_EMAIL,
@@ -191,7 +186,7 @@ var STATUSES_DATA = {
       messageTemplates: [
         '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *submitted* to Student Government. *<{projectSheetUrl}|View Items>*'
       ],
-      channelWebhooks: [OPTS.SLACK.WEBHOOKS.PURCHASING],
+      channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       user: OPTS.ITEM_COLUMNS.OFFICER_EMAIL,
@@ -215,7 +210,7 @@ var STATUSES_DATA = {
       messageTemplates: [
         '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *approved* by Student Government. *<{projectSheetUrl}|View Items>*'
       ],
-      channelWebhooks: [OPTS.SLACK.WEBHOOKS.PURCHASING],
+      channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       user: null,
@@ -236,7 +231,7 @@ var STATUSES_DATA = {
         '{userTags} React with ' + OPTS.SLACK.KYBER_TASK_REACTION + ' to the following message if you\'re going to pickup these items:',
         '{emoji} {userFullName} marked {numMarked} item{plural} for {projectName} as awaiting pickup from Student Business Services in MSC4300. *<{projectSheetUrl}|View Items>*'
       ],
-      channelWebhooks: [OPTS.SLACK.WEBHOOKS.RECIEVING],
+      channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.RECIEVING],
     },
     columns: {
       user: null,
@@ -256,7 +251,7 @@ var STATUSES_DATA = {
       messageTemplates: [
         '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as recieved (picked up). *<{projectSheetUrl}|View Items>*'
       ],
-      channelWebhooks: [OPTS.SLACK.WEBHOOKS.PURCHASING, OPTS.SLACK.WEBHOOKS.RECIEVING],
+      channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING, SECRET_OPTS.SLACK.WEBHOOKS.RECIEVING],
     },
     columns: {
       user: OPTS.ITEM_COLUMNS.RECIEVE_EMAIL,
@@ -275,7 +270,7 @@ var STATUSES_DATA = {
       messageTemplates: [
         '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *denied* (_see comments in database_). *<{projectSheetUrl}|View Items>*'
       ],
-      channelWebhooks: [OPTS.SLACK.WEBHOOKS.PURCHASING],
+      channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       user: OPTS.ITEM_COLUMNS.UPDATE_DATE,
@@ -297,7 +292,7 @@ var STATUSES_DATA = {
       messageTemplates: [
         '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *awaiting information* (_see comments in database_). *<{projectSheetUrl}|View Items>*'
       ],
-      channelWebhooks: [OPTS.SLACK.WEBHOOKS.PURCHASING],
+      channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       user: OPTS.ITEM_COLUMNS.UPDATE_DATE,
