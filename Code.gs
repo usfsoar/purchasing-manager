@@ -106,7 +106,9 @@ var OPTS = {
       /** Just all the listed Financial Officers. */
       OFFICERS: 'OFFICERS',
     }
-  }
+  },
+  /** Number of adjacent officer columns in the project sheets. */
+  NUM_OFFICER_COLS: 7
 };
 
 /**
