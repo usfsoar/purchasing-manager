@@ -1046,7 +1046,8 @@ function protectRanges() {
 
   sheets.forEach(function(sheet) {
     var sheetName = sheet.getName();
-    if(projectSheetNames.indexOf(sheetName) === -1) {
+    if(projectSheetNames.indexOf(sheetName) !== -1) {
+      // Lock certain sections of project sheets (only the headers and formula-driven parts)
       var headerRangeProtection = sheet.getRange(1, 1, OPTS.NUM_HEADER_ROWS, sheet.getLastColumn()).protect();
       var calculatedPriceColumnProtection = sheet.getRange(1, OPTS.ITEM_COLUMNS.TOTAL_PRICE.index, sheet.getLastRow(), 1).protect();
       var protectDescription = 'This part of the sheet can only be edited by the database admin.';
@@ -1061,6 +1062,7 @@ function protectRanges() {
       calculatedPriceColumnProtection.addEditor(admin);
 
     } else if(sheetName !== userDataSheetName) {
+      // Lock the entire sheet if not the userdatasheet
       var sheetProtection = sheet.protect();
       sheetProtection.setDescription('Only Financial Officers may edit this sheet.');
       sheetProtection.removeEditors(sheetProtection.getEditors());

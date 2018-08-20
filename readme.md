@@ -4,14 +4,21 @@ code handles tracking of purchasing items, using our Google Sheets database
 as a backend.
 
 ## Contributing
-This code will not run as-is; you need some channel webhooks to put into the
-`secret.template` file, before renaming it to `secret.js`. Also, the `clasp`
-config file is not included, so you cannot push directly to the Google Apps
-Script project. If you want to submit changes to this code and see them live
-in SOAR's own database, submit a pull request and the code will be pushed to
-Google Apps Script if merged.
+If you're a SOAR member who wants to contribute to this project, first request
+that a financial officer gives you editing access to the [purchasing database](https://docs.google.com/spreadsheets/d/14Q5FTNgsqDfZEpBl9nmuZF7c3tK5NTO0oAl_P9269t8/edit#gid=0)
+and this repository.
 
-If you want to use this code in your own project, you are free to under the GPL
-license.
+Then you'll need to install [Git](https://git-scm.com/downloads) and [Node, with NPM](https://nodejs.org/en/download/).
+Open a command prompt in whatever folder you'd like to put the project's code. Run
+`npm install @google/clasp -g`. After installing clasp, run `git clone https://github.com/usfsoar/purchasing-manager.git`.
+Enter the folder with `cd purchasing-manager` and run `clasp login`. Open the link
+provided and log in to clasp, allowing it the permissions it requests. Then run
+`clasp pull` to fetch the *secret.gs* file from Google Apps Scripts. Now you have
+all the files you need to edit the project.
 
-For more info contact [Ian Sanders](github.com/iansan5653).
+Edit the code. With every major group of changes, run `git add .` and 
+`git commit -m "Description of your changes"` and then `git push`. Finally, run 
+`clasp push` when you're done, in order to push the new code live to the Google
+Apps Script project. 
+
+Having trouble? Message *@Ian Sanders* on Slack.
