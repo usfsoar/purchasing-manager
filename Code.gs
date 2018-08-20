@@ -84,7 +84,7 @@ var OPTS = {
   },
   /** Names of sheets in the Spreadsheet */
   SHEET_NAMES: {
-    USERS: "Stored Slack IDs"
+    USERS: "Users"
   },
   /** Slack API pieces */
   SLACK: {
