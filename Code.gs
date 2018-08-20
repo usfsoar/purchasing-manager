@@ -5,6 +5,15 @@
  */
 
 /**
+ * Secret values. DO NOT PUSH TO GITHUB.
+ * @constant
+ * @readonly
+ * @global
+ * @type {Object}
+ */
+var SECRET_OPTS = getSecretOpts();
+
+/**
  * Global options object.
  * @constant
  * @readonly
