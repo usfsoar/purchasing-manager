@@ -1034,9 +1034,15 @@ function protectRanges() {
   var admin = 'iansanders@mail.usf.edu';
   var userDataSheetName = OPTS.SHEET_NAMES.USERS;
 
-  SpreadsheetApp.getActiveSpreadsheet().getProtections().forEach(function(protection) {
-    protection.remove();
-  });
+  SpreadsheetApp.getActiveSpreadsheet().getProtections(SpreadsheetApp.ProtectionType.RANGE)
+      .forEach(function(protection) {
+        protection.remove();
+      });
+
+  SpreadsheetApp.getActiveSpreadsheet().getProtections(SpreadsheetApp.ProtectionType.SHEET)
+      .forEach(function(protection) {
+        protection.remove();
+      });
 
   sheets.forEach(function(sheet) {
     var sheetName = sheet.getName();
