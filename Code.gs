@@ -105,8 +105,7 @@ var OPTS = {
       /** Just all the listed Financial Officers. */
       OFFICERS: 'OFFICERS',
     }
-  },
-  ADMIN_EMAIL: 'iansanders@mail.usf.edu',
+  }
 };
 
 /**
@@ -1031,7 +1030,7 @@ function protectRanges() {
   var sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
   var financialOfficers = getNamedRangeValues(OPTS.NAMED_RANGES.APPROVED_OFFICERS);
   var projectSheetNames = getNamedRangeValues(OPTS.NAMED_RANGES.PROJECT_SHEETS);
-  var admin = 'iansanders@mail.usf.edu';
+  var admin = SECRET_OPTS.ADMIN_EMAIL;
   var userDataSheetName = OPTS.SHEET_NAMES.USERS;
 
   SpreadsheetApp.getActiveSpreadsheet().getProtections(SpreadsheetApp.ProtectionType.RANGE)
@@ -1046,26 +1045,28 @@ function protectRanges() {
 
   sheets.forEach(function(sheet) {
     var sheetName = sheet.getName();
+    
     if(projectSheetNames.indexOf(sheetName) !== -1) {
       // Lock certain sections of project sheets (only the headers and formula-driven parts)
+      var numDataRows = sheet.getLastRow() - OPTS.NUM_HEADER_ROWS;
+
       var headerRangeProtection = sheet.getRange(1, 1, OPTS.NUM_HEADER_ROWS, sheet.getLastColumn()).protect();
-      var calculatedPriceColumnProtection = sheet.getRange(1, OPTS.ITEM_COLUMNS.TOTAL_PRICE.index, sheet.getLastRow(), 1).protect();
-      var protectDescription = 'This part of the sheet can only be edited by the database admin.';
+      var calculatedPriceColumnProtection = sheet.getRange(1, OPTS.ITEM_COLUMNS.TOTAL_PRICE.index,numDataRows, 1).protect();
+      var financialOfficerRangeProtection = sheet.getRange(3, OPTS.ITEM_COLUMNS.OFFICER_EMAIL.index, numDataRows, OPTS.NUM_OFFICER_COLS)
+      var adminProtectDescription = 'This part of the sheet can only be edited by the admin.';
+      var officerProtectDescription = 'This part of the sheet can only be edited by Financial Officers.';
 
-      headerRangeProtection.setDescription(protectDescription);
-      calculatedPriceColumnProtection.setDescription(protectDescription);
-
-      headerRangeProtection.removeEditors(headerRangeProtection.getEditors());
-      calculatedPriceColumnProtection.removeEditors(calculatedPriceColumnProtection.getEditors());
+      headerRangeProtection.setDescription(adminProtectDescription);
+      calculatedPriceColumnProtection.setDescription(adminProtectDescription);
+      financialOfficerRangeProtection.setDescription(officerProtectDescription);
 
       headerRangeProtection.addEditor(admin);
       calculatedPriceColumnProtection.addEditor(admin);
+      financialOfficerRangeProtection.addEditors(financialOfficers);
 
     } else if(sheetName !== userDataSheetName) {
-      // Lock the entire sheet if not the userdatasheet
+      // Lock the entire sheet if not the user data sheet
       var sheetProtection = sheet.protect();
-      sheetProtection.setDescription('Only Financial Officers may edit this sheet.');
-      sheetProtection.removeEditors(sheetProtection.getEditors());
       sheetProtection.addEditors(financialOfficers);
     }
   });
