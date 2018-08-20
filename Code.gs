@@ -29,6 +29,7 @@ var OPTS = {
      * 1 column, 12 rows (no header). */
     PROJECT_SHEETS: 'ProjectSheets',
     PROJECT_NAMES_TO_SHEETS: 'ProjectNamesToSheets',
+    STATUSES: 'Statuses',
   },
   /** Custom Menu labels. */
   CUSTOM_MENU: {
@@ -1033,6 +1034,9 @@ function protectRanges() {
   var admin = SECRET_OPTS.ADMIN_EMAIL;
   var userDataSheetName = OPTS.SHEET_NAMES.USERS;
 
+  var adminProtectDescription = 'This part of the sheet can only be edited by the admin.';
+  var officerProtectDescription = 'This part of the sheet can only be edited by Financial Officers.';
+
   SpreadsheetApp.getActiveSpreadsheet().getProtections(SpreadsheetApp.ProtectionType.RANGE)
       .forEach(function(protection) {
         protection.remove();
@@ -1045,7 +1049,7 @@ function protectRanges() {
 
   sheets.forEach(function(sheet) {
     var sheetName = sheet.getName();
-    
+
     if(projectSheetNames.indexOf(sheetName) !== -1) {
       // Lock certain sections of project sheets (only the headers and formula-driven parts)
       var numDataRows = sheet.getLastRow() - OPTS.NUM_HEADER_ROWS;
@@ -1053,8 +1057,6 @@ function protectRanges() {
       var headerRangeProtection = sheet.getRange(1, 1, OPTS.NUM_HEADER_ROWS, sheet.getLastColumn()).protect();
       var calculatedPriceColumnProtection = sheet.getRange(1, OPTS.ITEM_COLUMNS.TOTAL_PRICE.index,numDataRows, 1).protect();
       var financialOfficerRangeProtection = sheet.getRange(3, OPTS.ITEM_COLUMNS.OFFICER_EMAIL.index, numDataRows, OPTS.NUM_OFFICER_COLS)
-      var adminProtectDescription = 'This part of the sheet can only be edited by the admin.';
-      var officerProtectDescription = 'This part of the sheet can only be edited by Financial Officers.';
 
       headerRangeProtection.setDescription(adminProtectDescription);
       calculatedPriceColumnProtection.setDescription(adminProtectDescription);
@@ -1070,4 +1072,10 @@ function protectRanges() {
       sheetProtection.addEditors(financialOfficers);
     }
   });
+
+  // Protect the statuses, since they need to match the values in the script
+  var statusesProtection = SpreadsheetApp.getActiveSpreadsheet()
+      .getRangeByName(OPTS.NAMED_RANGES.STATUSES).protect();
+  statusesProtection.setDescription(adminProtectDescription);
+  statusesProtection.addEditor(admin);
 }
