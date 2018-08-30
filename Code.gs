@@ -960,7 +960,7 @@ function markItems(newStatus, markAll) {
  * selected items to.
  * @returns {void}
  */
-function markItems(newStatus) {
+function fastForwardItems(newStatus) {
   if(!checkIfProjectSheet() || !verifyFinancialOfficer()) return;
 
   var selectedRanges = getSelectedRows();
