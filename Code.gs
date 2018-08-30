@@ -163,7 +163,8 @@ var STATUSES_DATA = {
     columns: {
       user: null,
       date: null,
-    }
+    },
+    officersOnly: false,
   },
   NEW: {
     text: 'New',
@@ -196,7 +197,8 @@ var STATUSES_DATA = {
       OPTS.ITEM_COLUMNS.LINK,
       OPTS.ITEM_COLUMNS.UNIT_PRICE,
       OPTS.ITEM_COLUMNS.QUANTITY,
-    ]
+    ],
+    officersOnly: false,
   },
   SUBMITTED: {
     text: 'Submitted',
@@ -232,6 +234,7 @@ var STATUSES_DATA = {
       OPTS.ITEM_COLUMNS.CATEGORY,
     ],
     fillInDefaults: true,
+    officersOnly: true,
   },
   APPROVED: {
     text: 'Ordered',
@@ -264,6 +267,7 @@ var STATUSES_DATA = {
       ],
     },
     fillInDefaults: true,
+    officersOnly: true,
   },
   AWAITING_PICKUP: {
     text: 'Awaiting Pickup',
@@ -298,6 +302,7 @@ var STATUSES_DATA = {
       ],
     },
     fillInDefaults: true,
+    officersOnly: true,
   },
   RECIEVED: {
     text: 'Recieved',
@@ -332,6 +337,7 @@ var STATUSES_DATA = {
         OPTS.ITEM_COLUMNS.RECIEVE_DATE  
       ],
     },
+    officersOnly: false,
   },
   DENIED: {
     text: 'Denied',
@@ -364,7 +370,8 @@ var STATUSES_DATA = {
     },
     requiredColumns: [
       OPTS.ITEM_COLUMNS.OFFICER_COMMENTS
-    ]
+    ],
+    officersOnly: true,
   },
   AWAITING_INFO: {
     text: 'Awaiting Info',
@@ -397,7 +404,8 @@ var STATUSES_DATA = {
     },
     requiredColumns: [
       OPTS.ITEM_COLUMNS.OFFICER_COMMENTS
-    ]
+    ],
+    officersOnly: true,
   }
 };
 
@@ -494,9 +502,7 @@ function buildAndAddCustomMenu() {
     .addItem(STATUSES_DATA.NEW.actionText.all, markAllNew.name)
     .addItem(STATUSES_DATA.NEW.actionText.selected, markSelectedNew.name);
 
-  var email = Session.getActiveUser().getEmail();
-
-  if (verifyFinancialOfficer(email)) {
+  if (verifyFinancialOfficer()) {
     customMenu
       .addSeparator()
       .addItem(STATUSES_DATA.SUBMITTED.actionText.selected, markSelectedSubmitted.name)
@@ -611,10 +617,12 @@ var getCurrentUserInfo = (function() {
 /**
  * Verify whether or not the email provided is one of an approved financial officer.
  * After first run, uses cache to avoid having to pull the range again.
- * @param {string} email
+ * @param {?string} [email] Email of the user to check. If no email provided,
+ * uses current user email (if possible; if not returns false).
  * @returns {boolean} true if the current user is approved.
  */
 function verifyFinancialOfficer(email) {
+  if(!email) email = Session.getActiveUser().getEmail() || null;
   if(email && getNamedRangeValues(OPTS.NAMED_RANGES.APPROVED_OFFICERS)
       .indexOf(email) !== -1) {
     return true;
@@ -787,7 +795,7 @@ function getColumnRange(columnNumber) {
  * @returns {void}
  */
 function markItems(newStatus, markAll) {
-  if(!checkIfProjectSheet()) return;
+  if(!checkIfProjectSheet() || (newStatus.officersOnly && !verifyFinancialOfficer())) return;
 
   /** All the ranges in the sheet if `markAll` is set, else just the selected. */
   var selectedRanges = markAll ? getAllRows() : getSelectedRows();
@@ -953,7 +961,7 @@ function markItems(newStatus, markAll) {
  * @returns {void}
  */
 function markItems(newStatus) {
-  if(!checkIfProjectSheet()) return;
+  if(!checkIfProjectSheet() || !verifyFinancialOfficer()) return;
 
   var selectedRanges = getSelectedRows();
 
