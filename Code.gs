@@ -188,8 +188,8 @@ var STATUSES_DATA = {
       date: OPTS.ITEM_COLUMNS.REQUEST_DATE,
     },
     fastForwardColumns: {
-      user: [OPTS.ITEM_COLUMNS.REQUEST_EMAIL],
-      date: [OPTS.ITEM_COLUMNS.REQUEST_DATE],
+      user: [],
+      date: [],
     },
     requiredColumns: [
       OPTS.ITEM_COLUMNS.NAME,
@@ -222,11 +222,9 @@ var STATUSES_DATA = {
     fastForwardColumns: {
       user: [
         OPTS.ITEM_COLUMNS.REQUEST_EMAIL,
-        OPTS.ITEM_COLUMNS.OFFICER_EMAIL
       ],
       date: [
         OPTS.ITEM_COLUMNS.REQUEST_DATE,
-        OPTS.ITEM_COLUMNS.SUBMIT_DATE
       ],
     },
     reccomendedColumns: [
@@ -263,7 +261,6 @@ var STATUSES_DATA = {
       date: [
         OPTS.ITEM_COLUMNS.REQUEST_DATE,
         OPTS.ITEM_COLUMNS.SUBMIT_DATE,
-        OPTS.ITEM_COLUMNS.UPDATE_DATE        
       ],
     },
     fillInDefaults: true,
@@ -298,7 +295,6 @@ var STATUSES_DATA = {
         OPTS.ITEM_COLUMNS.REQUEST_DATE,
         OPTS.ITEM_COLUMNS.SUBMIT_DATE,
         OPTS.ITEM_COLUMNS.UPDATE_DATE,
-        OPTS.ITEM_COLUMNS.ARRIVE_DATE      
       ],
     },
     fillInDefaults: true,
@@ -327,14 +323,12 @@ var STATUSES_DATA = {
       user: [
         OPTS.ITEM_COLUMNS.REQUEST_EMAIL,
         OPTS.ITEM_COLUMNS.OFFICER_EMAIL,
-        OPTS.ITEM_COLUMNS.RECIEVE_EMAIL
       ],
       date: [
         OPTS.ITEM_COLUMNS.REQUEST_DATE,
         OPTS.ITEM_COLUMNS.SUBMIT_DATE,
         OPTS.ITEM_COLUMNS.UPDATE_DATE,
         OPTS.ITEM_COLUMNS.ARRIVE_DATE,
-        OPTS.ITEM_COLUMNS.RECIEVE_DATE  
       ],
     },
     officersOnly: false,
@@ -350,22 +344,20 @@ var STATUSES_DATA = {
       emoji: ':red_circle:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *denied* (_see comments in database_). *<{projectSheetUrl}|View Items>*'
+        '{emoji} {userTags} {userFullName} *denied* {numMarked} item{plural} for {projectName} (_see comments in database_). *<{projectSheetUrl}|View Items>*'
       ],
       channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
-      user: OPTS.ITEM_COLUMNS.UPDATE_DATE,
-      date: OPTS.ITEM_COLUMNS.OFFICER_EMAIL,
+      user: OPTS.ITEM_COLUMNS.OFFICER_EMAIL,
+      date: OPTS.ITEM_COLUMNS.UPDATE_DATE,
     },
     fastForwardColumns: {
       user: [
-        OPTS.ITEM_COLUMNS.REQUEST_EMAIL,
-        OPTS.ITEM_COLUMNS.OFFICER_EMAIL
+        OPTS.ITEM_COLUMNS.REQUEST_EMAIL
       ],
       date: [
-        OPTS.ITEM_COLUMNS.REQUEST_DATE,
-        OPTS.ITEM_COLUMNS.UPDATE_DATE        
+        OPTS.ITEM_COLUMNS.REQUEST_DATE      
       ],
     },
     requiredColumns: [
@@ -384,22 +376,20 @@ var STATUSES_DATA = {
       emoji: ':black_circle:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *awaiting information* (_see comments in database_). *<{projectSheetUrl}|View Items>*'
+        '{emoji} {userTags} {userFullName} requested for info for {numMarked} item{plural} for {projectName} (_see comments in database_). *<{projectSheetUrl}|View Items>*'
       ],
       channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
-      user: OPTS.ITEM_COLUMNS.UPDATE_DATE,
-      date: OPTS.ITEM_COLUMNS.OFFICER_EMAIL,
+      user: OPTS.ITEM_COLUMNS.OFFICER_EMAIL,
+      date: OPTS.ITEM_COLUMNS.UPDATE_DATE,
     },
     fastForwardColumns: {
       user: [
-        OPTS.ITEM_COLUMNS.REQUEST_EMAIL,
-        OPTS.ITEM_COLUMNS.OFFICER_EMAIL
+        OPTS.ITEM_COLUMNS.REQUEST_EMAIL
       ],
       date: [
-        OPTS.ITEM_COLUMNS.REQUEST_DATE,
-        OPTS.ITEM_COLUMNS.UPDATE_DATE        
+        OPTS.ITEM_COLUMNS.REQUEST_DATE       
       ],
     },
     requiredColumns: [
