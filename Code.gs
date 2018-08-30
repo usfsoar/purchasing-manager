@@ -508,13 +508,13 @@ function buildAndAddCustomMenu() {
 
     var fastFowardMenu = SpreadsheetApp.getUi()
       .createMenu(OPTS.FAST_FORWARD_MENU.NAME)
-      .addItem(STATUSES_DATA.NEW.actionText.fastForward)
-      .addItem(STATUSES_DATA.SUBMITTED.actionText.fastForward)
-      .addItem(STATUSES_DATA.APPROVED.actionText.fastForward)
-      .addItem(STATUSES_DATA.AWAITING_INFO.actionText.fastForward)
-      .addItem(STATUSES_DATA.DENIED.actionText.fastForward)
-      .addItem(STATUSES_DATA.AWAITING_PICKUP.actionText.fastForward)
-      .addItem(STATUSES_DATA.RECIEVED.actionText.fastForward);
+      .addItem(STATUSES_DATA.NEW.actionText.fastForward, fastForwardSelectedNew.name)
+      .addItem(STATUSES_DATA.SUBMITTED.actionText.fastForward, fastForwardSelectedSubmitted.name)
+      .addItem(STATUSES_DATA.APPROVED.actionText.fastForward, fastForwardSelectedApproved.name)
+      .addItem(STATUSES_DATA.AWAITING_INFO.actionText.fastForward, fastForwardSelectedAwaitingInfo.name)
+      .addItem(STATUSES_DATA.DENIED.actionText.fastForward, fastForwardSelectedDenied.name)
+      .addItem(STATUSES_DATA.AWAITING_PICKUP.actionText.fastForward, fastForwardSelectedAwaitingPickup.name)
+      .addItem(STATUSES_DATA.RECIEVED.actionText.fastForward, fastForwardSelectedRecieved.name);
   }
 
   customMenu
@@ -945,6 +945,138 @@ function markItems(newStatus, markAll) {
 }
 
 /**
+ * Fast-forward all of the items in the currently selected rows to `newStatus`,
+ * filling in the date and attribution columns but not notifying on Slack. Allows
+ * for skipping statuses
+ * @param {Status} newStatus The object representing the status to fast-forward the
+ * selected items to.
+ * @returns {void}
+ */
+function markItems(newStatus) {
+  if(!checkIfProjectSheet()) return;
+
+  var selectedRanges = getSelectedRows();
+
+  var numMarked = 0;
+  var currentOfficer = getCurrentUserInfo();
+  var currentOfficerEmail = currentOfficer.email;
+  var currentDate = new Date();
+
+  // Cache the entire columns, to avoid making dozens of calls to the server
+  var statusColumn = getColumnRange(OPTS.ITEM_COLUMNS.STATUS.index);
+  var statusColumnValues = statusColumn.getValues();
+
+  // Fetch normal columns to update
+  var userColumn, dateColumn, userColumnValues, dateColumnValues;
+  if(newStatus.columns.user) {
+    userColumn = getColumnRange(newStatus.columns.user.index);
+    userColumnValues = userColumn.getValues();
+  }
+  if(newStatus.columns.date) {
+    dateColumn = getColumnRange(newStatus.columns.date.index);
+    dateColumnValues = dateColumn.getValues();
+  }
+
+  // Fetch default columns to fill if empty
+  var accountColumn, categoryColumn, accountColumnValues, categoryColumnValues;
+  if(newStatus.fillInDefaults) {
+    accountColumn = getColumnRange(OPTS.ITEM_COLUMNS.ACCOUNT.index);
+    categoryColumn = getColumnRange(OPTS.ITEM_COLUMNS.CATEGORY.index);
+    accountColumnValues = accountColumn.getValues();
+    categoryColumnValues = categoryColumn.getValues();
+  }
+
+  // Fetch fast-forward columns to fill if empty
+  var pastUserColumns, pastDateColumns, pastUserColumnsValues, pastDateColumnsValues;
+  pastUserColumns = newStatus.fastForwardColumns.user.map(function(ffCol) {
+    return getColumnRange(ffCol.index);
+  });
+  pastDateColumns = newStatus.fastForwardColumns.date.map(function(ffCol) {
+    return getColumnRange(ffCol.index);
+  });
+  pastUserColumnsValues = pastUserColumns.map(function(colRange) {
+    return colRange.getValues();
+  });
+  pastDateColumnsValues = pastDateColumns.map(function(colRange) {
+    return colRange.getValues();
+  });
+
+  // Loop through the ranges
+  for(var k = 0; k < selectedRanges.length; k++) {
+    var range = selectedRanges[k];
+    var rangeStartIndex = range.getRow() - 1;
+
+    // Loop through the rows in the range
+    for (var l = 0; l < range.getNumRows(); l++) {
+      /** The index (not number) of the current row in the spreadsheet. */
+      var currentSheetRowIndex = rangeStartIndex + l;
+      /**
+       * The index of the current value row in the spreadsheet, with the first
+       * row after the headers being 0.
+       */
+      var currentValuesRowIndex = currentSheetRowIndex - OPTS.NUM_HEADER_ROWS;
+
+      // Update values in local cache
+      // These ranges don't include the header, so 0 in the range is
+      // OPTS.NUM_HEADER_ROWS in the spreadsheet
+      statusColumnValues[currentValuesRowIndex][0] = newStatus.text;
+
+      if(newStatus.columns.user) {
+        userColumnValues[currentValuesRowIndex][0] = currentOfficerEmail;
+      }
+      if(newStatus.columns.date) {
+        dateColumnValues[currentValuesRowIndex][0] = currentDate;
+      }
+
+      if(newStatus.fillInDefaults) {
+        if(accountColumnValues[currentValuesRowIndex][0].toString() === '') {
+          accountColumnValues[currentValuesRowIndex][0] =
+              OPTS.DEFAULT_VALUES.ACCOUNT_NAME;
+        }
+        if(categoryColumnValues[currentValuesRowIndex][0].toString() === '') {
+          categoryColumnValues[currentValuesRowIndex][0] =
+              OPTS.DEFAULT_VALUES.CATEGORY;
+        }
+      }
+
+      // If any of the past columns are blank, fill them in with current info
+      pastUserColumnsValues.forEach(function(columnValues) {
+        if(columnValues[currentValuesRowIndex][0].toString() === '') {
+          columnValues[currentValuesRowIndex][0] = currentOfficerEmail
+        }
+      });
+      pastDateColumnsValues.forEach(function(columnValues) {
+        if(columnValues[currentValuesRowIndex][0].toString() === '') {
+          columnValues[currentValuesRowIndex][0] = currentDate
+        }
+      });
+
+      numMarked++;
+    }
+  }
+
+  // Write the cached values
+  statusColumn.setValues(statusColumnValues);
+
+  if(newStatus.columns.user) userColumn.setValues(userColumnValues);
+  if(newStatus.columns.date) dateColumn.setValues(dateColumnValues);
+
+  if(newStatus.fillInDefaults) {
+    accountColumn.setValues(accountColumnValues);
+    categoryColumn.setValues(categoryColumnValues);
+  }
+
+  pastUserColumns.forEach(function(columnRange, index) {
+    columnRange.setValues(pastUserColumnsValues[index]);
+  });
+  pastDateColumns.forEach(function(columnRange, index) {
+    columnRange.setValues(pastDateColumnsValues[index]);
+  });
+
+  successNotification(numMarked + ' items fast-forwarded to "' + newStatus.text + '."');
+}
+
+/**
  * Push `potentialNewItem` to `arr` if it's not already in `arr`. Returns modified
  * `arr`.
  * @param {[]} arr
@@ -1123,6 +1255,41 @@ function markSelectedAwaitingInfo() {
 /** Mark selected items in the sheet as denied. */
 function markSelectedDenied() {
   markItems(STATUSES_DATA.DENIED);
+}
+
+/** Fast-forward the selected items in the sheet to new. */
+function fastForwardSelectedNew() {
+  fastForwardItems(STATUSES_DATA.NEW);
+}
+
+/** Fast-forward selected items in the sheet to recieved. */
+function fastForwardSelectedRecieved() {
+  fastForwardItems(STATUSES_DATA.RECIEVED);
+}
+
+/** Fast-forward selected items in the sheet to submitted. */
+function fastForwardSelectedSubmitted() {
+  fastForwardItems(STATUSES_DATA.SUBMITTED);
+}
+
+/** Fast-forward selected items in the sheet to approved. */
+function fastForwardSelectedApproved() {
+  fastForwardItems(STATUSES_DATA.APPROVED);
+}
+
+/** Fast-forward selected items in the sheet to arrived / awaiting pickup. */
+function fastForwardSelectedAwaitingPickup() {
+  fastForwardItems(STATUSES_DATA.AWAITING_PICKUP);
+}
+
+/** Fast-forward selected items in the sheet to awaiting info. */
+function fastForwardSelectedAwaitingInfo() {
+  fastForwardItems(STATUSES_DATA.AWAITING_INFO);
+}
+
+/** Fast-forward selected items in the sheet to denied. */
+function fastForwardSelectedDenied() {
+  fastForwardItems(STATUSES_DATA.DENIED);
 }
 
 /** Reinstate / update all the protected ranges. */
