@@ -300,18 +300,18 @@ var STATUSES_DATA = {
     fillInDefaults: true,
     officersOnly: true,
   },
-  RECIEVED: {
-    text: 'Recieved',
+  RECEIVED: {
+    text: 'Received',
     allowedPrevious: ['Awaiting Pickup'],
     actionText: {
-      fastForward: 'Recieved',
-      selected: 'Mark selected items as recieved (picked up)',
+      fastForward: 'Received',
+      selected: 'Mark selected items as received (picked up)',
     },
     slack: {
       emoji: ':heavy_check_mark:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as recieved (picked up). *<{projectSheetUrl}|View Items>*'
+        '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as received (picked up). *<{projectSheetUrl}|View Items>*'
       ],
       channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING, SECRET_OPTS.SLACK.WEBHOOKS.RECIEVING],
     },
@@ -367,7 +367,7 @@ var STATUSES_DATA = {
   },
   AWAITING_INFO: {
     text: 'Awaiting Info',
-    allowedPrevious: ['New', 'Submitted', 'Denied', 'Ordered', 'Recieved'],
+    allowedPrevious: ['New', 'Submitted', 'Denied', 'Ordered', 'Received'],
     actionText: {
       fastForward: 'Awaiting Info',
       selected: 'Request more information for selected items'
@@ -510,12 +510,12 @@ function buildAndAddCustomMenu() {
       .addItem(STATUSES_DATA.AWAITING_INFO.actionText.fastForward, fastForwardSelectedAwaitingInfo.name)
       .addItem(STATUSES_DATA.DENIED.actionText.fastForward, fastForwardSelectedDenied.name)
       .addItem(STATUSES_DATA.AWAITING_PICKUP.actionText.fastForward, fastForwardSelectedAwaitingPickup.name)
-      .addItem(STATUSES_DATA.RECIEVED.actionText.fastForward, fastForwardSelectedRecieved.name);
+      .addItem(STATUSES_DATA.RECEIVED.actionText.fastForward, fastForwardSelectedReceived.name);
   }
 
   customMenu
       .addSeparator()
-      .addItem(STATUSES_DATA.RECIEVED.actionText.selected, markSelectedRecieved.name);
+      .addItem(STATUSES_DATA.RECEIVED.actionText.selected, markSelectedReceived.name);
 
   if(verifyAdmin()) {
     customMenu
@@ -1235,8 +1235,8 @@ function markAllNew() {
 }
 
 /** Mark selected items in the sheet as recieved. */
-function markSelectedRecieved() {
-  markItems(STATUSES_DATA.RECIEVED);
+function markSelectedReceived() {
+  markItems(STATUSES_DATA.RECEIVED);
 }
 
 /** Mark selected items in the sheet as submitted. */
@@ -1270,8 +1270,8 @@ function fastForwardSelectedNew() {
 }
 
 /** Fast-forward selected items in the sheet to recieved. */
-function fastForwardSelectedRecieved() {
-  fastForwardItems(STATUSES_DATA.RECIEVED);
+function fastForwardSelectedReceived() {
+  fastForwardItems(STATUSES_DATA.RECEIVED);
 }
 
 /** Fast-forward selected items in the sheet to submitted. */
