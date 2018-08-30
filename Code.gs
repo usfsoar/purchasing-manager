@@ -527,7 +527,7 @@ function buildAndAddCustomMenu() {
       .addSeparator()
       .addItem(STATUSES_DATA.RECIEVED.actionText.selected, markSelectedRecieved.name);
 
-  if(email === OPTS.ADMIN_EMAIL) {
+  if(verifyAdmin()) {
     customMenu
       .addSeparator()
       .addItem('Refresh protections', protectRanges.name);
@@ -619,7 +619,7 @@ var getCurrentUserInfo = (function() {
  * After first run, uses cache to avoid having to pull the range again.
  * @param {?string} [email] Email of the user to check. If no email provided,
  * uses current user email (if possible; if not returns false).
- * @returns {boolean} true if the current user is approved.
+ * @returns {boolean} true if the user is a financial officer.
  */
 function verifyFinancialOfficer(email) {
   if(!email) email = Session.getActiveUser().getEmail() || null;
@@ -627,6 +627,15 @@ function verifyFinancialOfficer(email) {
       .indexOf(email) !== -1) {
     return true;
   }
+  return false;
+}
+
+/**
+ * Verify whether or not the current user is the admin.
+ * @returns {boolean} true if the current user is an admin.
+ */
+function verifyAdmin() {
+  if(Session.getActiveUser().getEmail() === OPTS.ADMIN_EMAIL) return true;
   return false;
 }
 
@@ -1302,6 +1311,8 @@ function fastForwardSelectedDenied() {
 
 /** Reinstate / update all the protected ranges. */
 function protectRanges() {
+  if(!verifyAdmin()) return;
+
   var sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
   var financialOfficers = getNamedRangeValues(OPTS.NAMED_RANGES.APPROVED_OFFICERS);
   var projectSheetNames = getNamedRangeValues(OPTS.NAMED_RANGES.PROJECT_SHEETS);
