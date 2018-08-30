@@ -36,7 +36,7 @@ var OPTS = {
     NAME: 'SOAR Purchasing',
   },
   FAST_FORWARD_MENU: {
-    NAME: 'Fast Forward'
+    NAME: 'Fast-Forward'
   },
   /** The number of header rows in the project sheets. */
   NUM_HEADER_ROWS: 2,
@@ -635,7 +635,7 @@ function verifyFinancialOfficer(email) {
  * @returns {boolean} true if the current user is an admin.
  */
 function verifyAdmin() {
-  if(Session.getActiveUser().getEmail() === OPTS.ADMIN_EMAIL) return true;
+  if(Session.getActiveUser().getEmail() === SECRET_OPTS.ADMIN_EMAIL) return true;
   return false;
 }
 
