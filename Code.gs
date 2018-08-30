@@ -31,9 +31,12 @@ var OPTS = {
     PROJECT_NAMES_TO_SHEETS: 'ProjectNamesToSheets',
     STATUSES: 'Statuses',
   },
-  /** Custom Menu labels. */
+  /** Custom Menu info. */
   CUSTOM_MENU: {
     NAME: 'SOAR Purchasing',
+  },
+  FAST_FORWARD_MENU: {
+    NAME: 'Fast Forward'
   },
   /** The number of header rows in the project sheets. */
   NUM_HEADER_ROWS: 2,
@@ -118,6 +121,7 @@ var OPTS = {
  * @prop {Object} actionText Menu item text.
  * @prop {?string} actionText.selected Menu item text for marking just selected.
  * @prop {?string} actionText.all Menu item text for marking all possible.
+ * @prop {?string} actionText.fastForward Menu item text for fast-forwarding items. 
  * @prop {Object} slack Data for sending Slack notifications.
  * @prop {string[]} slack.messageTemplates Templates for sending Slack messages.
  * Will send a Slack message per string. Will replace {emoji} with the emoji,
@@ -133,6 +137,9 @@ var OPTS = {
  * @prop {Object} columns Columns to input data into.
  * @prop {?Column} columns.user Column to input attribution email address into.
  * @prop {?Column} columns.date Column to input action date into.
+ * @prop {Object} fastForwardColumns Columns to auto-fill upon fast-forwarding.
+ * @prop {?(Column[])} fastForwardColumns.user Column to input attribution email address into.
+ * @prop {?(Column[])} fastForwardColumns.date Column to input action date into.
  * @prop {?(Column[])} requiredColumns Optional required columns needed to perform actions.
  * @prop {?(Column[])} reccomendedColumns Optional reccomended columns desired to perform actions.
  * @prop {?boolean} fillInDefaults If true, will fill default values for Account
@@ -150,7 +157,8 @@ var STATUSES_DATA = {
   CREATED: {
     text: '',
     allowedPrevious: [],
-    actionText: {},
+    actionText: {
+    },
     slack: {},
     columns: {
       user: null,
@@ -161,6 +169,7 @@ var STATUSES_DATA = {
     text: 'New',
     allowedPrevious: ['', 'Awaiting Info'],
     actionText: {
+      fastForward: 'New',
       selected: 'Submit selected new items',
       all: 'Submit all new items',
     },
@@ -177,6 +186,10 @@ var STATUSES_DATA = {
       user: OPTS.ITEM_COLUMNS.REQUEST_EMAIL,
       date: OPTS.ITEM_COLUMNS.REQUEST_DATE,
     },
+    fastForwardColumns: {
+      user: [OPTS.ITEM_COLUMNS.REQUEST_EMAIL],
+      date: [OPTS.ITEM_COLUMNS.REQUEST_DATE],
+    },
     requiredColumns: [
       OPTS.ITEM_COLUMNS.NAME,
       OPTS.ITEM_COLUMNS.SUPPLIER,
@@ -189,6 +202,7 @@ var STATUSES_DATA = {
     text: 'Submitted',
     allowedPrevious: ['New'],
     actionText: {
+      fastForward: 'Submitted',
       selected: 'Mark selected items as submitted',
     },
     slack: {
@@ -203,6 +217,16 @@ var STATUSES_DATA = {
       user: OPTS.ITEM_COLUMNS.OFFICER_EMAIL,
       date: OPTS.ITEM_COLUMNS.SUBMIT_DATE,
     },
+    fastForwardColumns: {
+      user: [
+        OPTS.ITEM_COLUMNS.REQUEST_EMAIL,
+        OPTS.ITEM_COLUMNS.OFFICER_EMAIL
+      ],
+      date: [
+        OPTS.ITEM_COLUMNS.REQUEST_DATE,
+        OPTS.ITEM_COLUMNS.SUBMIT_DATE
+      ],
+    },
     reccomendedColumns: [
       OPTS.ITEM_COLUMNS.ACCOUNT,
       OPTS.ITEM_COLUMNS.CATEGORY,
@@ -210,16 +234,17 @@ var STATUSES_DATA = {
     fillInDefaults: true,
   },
   APPROVED: {
-    text: 'Approved',
+    text: 'Ordered',
     allowedPrevious: ['Submitted'],
     actionText: {
-      selected: 'Mark selected items as approved',
+      fastForward: 'Ordered',
+      selected: 'Mark selected items as ordered by SBS',
     },
     slack: {
       emoji: ':white_circle:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *approved* by Student Government. *<{projectSheetUrl}|View Items>*'
+        '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *ordered* by Student Government. *<{projectSheetUrl}|View Items>*'
       ],
       channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
@@ -227,12 +252,24 @@ var STATUSES_DATA = {
       user: null,
       date: OPTS.ITEM_COLUMNS.UPDATE_DATE,
     },
+    fastForwardColumns: {
+      user: [
+        OPTS.ITEM_COLUMNS.REQUEST_EMAIL,
+        OPTS.ITEM_COLUMNS.OFFICER_EMAIL
+      ],
+      date: [
+        OPTS.ITEM_COLUMNS.REQUEST_DATE,
+        OPTS.ITEM_COLUMNS.SUBMIT_DATE,
+        OPTS.ITEM_COLUMNS.UPDATE_DATE        
+      ],
+    },
     fillInDefaults: true,
   },
   AWAITING_PICKUP: {
     text: 'Awaiting Pickup',
     allowedPrevious: ['Submitted', 'Approved'],
     actionText: {
+      fastForward: 'Awaiting Pickup',
       selected: 'Mark selected items as awaiting pickup',
     },
     slack: {
@@ -248,12 +285,25 @@ var STATUSES_DATA = {
       user: null,
       date: OPTS.ITEM_COLUMNS.ARRIVE_DATE,
     },
+    fastForwardColumns: {
+      user: [
+        OPTS.ITEM_COLUMNS.REQUEST_EMAIL,
+        OPTS.ITEM_COLUMNS.OFFICER_EMAIL
+      ],
+      date: [
+        OPTS.ITEM_COLUMNS.REQUEST_DATE,
+        OPTS.ITEM_COLUMNS.SUBMIT_DATE,
+        OPTS.ITEM_COLUMNS.UPDATE_DATE,
+        OPTS.ITEM_COLUMNS.ARRIVE_DATE      
+      ],
+    },
     fillInDefaults: true,
   },
   RECIEVED: {
     text: 'Recieved',
     allowedPrevious: ['Awaiting Pickup'],
     actionText: {
+      fastForward: 'Recieved',
       selected: 'Mark selected items as recieved (picked up)',
     },
     slack: {
@@ -267,12 +317,27 @@ var STATUSES_DATA = {
     columns: {
       user: OPTS.ITEM_COLUMNS.RECIEVE_EMAIL,
       date: OPTS.ITEM_COLUMNS.RECIEVE_DATE,
-    }
+    },
+    fastForwardColumns: {
+      user: [
+        OPTS.ITEM_COLUMNS.REQUEST_EMAIL,
+        OPTS.ITEM_COLUMNS.OFFICER_EMAIL,
+        OPTS.ITEM_COLUMNS.RECIEVE_EMAIL
+      ],
+      date: [
+        OPTS.ITEM_COLUMNS.REQUEST_DATE,
+        OPTS.ITEM_COLUMNS.SUBMIT_DATE,
+        OPTS.ITEM_COLUMNS.UPDATE_DATE,
+        OPTS.ITEM_COLUMNS.ARRIVE_DATE,
+        OPTS.ITEM_COLUMNS.RECIEVE_DATE  
+      ],
+    },
   },
   DENIED: {
     text: 'Denied',
     allowedPrevious: ['New', 'Submitted', 'Approved', 'Awaiting Info'],
     actionText: {
+      fastForward: 'Denied',
       selected: 'Deny selected items',
     },
     slack: {
@@ -287,6 +352,16 @@ var STATUSES_DATA = {
       user: OPTS.ITEM_COLUMNS.UPDATE_DATE,
       date: OPTS.ITEM_COLUMNS.OFFICER_EMAIL,
     },
+    fastForwardColumns: {
+      user: [
+        OPTS.ITEM_COLUMNS.REQUEST_EMAIL,
+        OPTS.ITEM_COLUMNS.OFFICER_EMAIL
+      ],
+      date: [
+        OPTS.ITEM_COLUMNS.REQUEST_DATE,
+        OPTS.ITEM_COLUMNS.UPDATE_DATE        
+      ],
+    },
     requiredColumns: [
       OPTS.ITEM_COLUMNS.OFFICER_COMMENTS
     ]
@@ -295,6 +370,7 @@ var STATUSES_DATA = {
     text: 'Awaiting Info',
     allowedPrevious: ['New', 'Submitted', 'Denied', 'Approved', 'Recieved'],
     actionText: {
+      fastForward: 'Awaiting Info',
       selected: 'Request more information for selected items'
     },
     slack: {
@@ -308,6 +384,16 @@ var STATUSES_DATA = {
     columns: {
       user: OPTS.ITEM_COLUMNS.UPDATE_DATE,
       date: OPTS.ITEM_COLUMNS.OFFICER_EMAIL,
+    },
+    fastForwardColumns: {
+      user: [
+        OPTS.ITEM_COLUMNS.REQUEST_EMAIL,
+        OPTS.ITEM_COLUMNS.OFFICER_EMAIL
+      ],
+      date: [
+        OPTS.ITEM_COLUMNS.REQUEST_DATE,
+        OPTS.ITEM_COLUMNS.UPDATE_DATE        
+      ],
     },
     requiredColumns: [
       OPTS.ITEM_COLUMNS.OFFICER_COMMENTS
@@ -419,6 +505,16 @@ function buildAndAddCustomMenu() {
       .addSeparator()
       .addItem(STATUSES_DATA.AWAITING_INFO.actionText.selected, markSelectedAwaitingInfo.name)
       .addItem(STATUSES_DATA.DENIED.actionText.selected, markSelectedDenied.name);
+
+    var fastFowardMenu = SpreadsheetApp.getUi()
+      .createMenu(OPTS.FAST_FORWARD_MENU.NAME)
+      .addItem(STATUSES_DATA.NEW.actionText.fastForward)
+      .addItem(STATUSES_DATA.SUBMITTED.actionText.fastForward)
+      .addItem(STATUSES_DATA.APPROVED.actionText.fastForward)
+      .addItem(STATUSES_DATA.AWAITING_INFO.actionText.fastForward)
+      .addItem(STATUSES_DATA.DENIED.actionText.fastForward)
+      .addItem(STATUSES_DATA.AWAITING_PICKUP.actionText.fastForward)
+      .addItem(STATUSES_DATA.RECIEVED.actionText.fastForward);
   }
 
   customMenu
@@ -432,6 +528,7 @@ function buildAndAddCustomMenu() {
   }
 
   customMenu.addToUi();
+  fastFowardMenu.addToUi();
 }
 
 /** Show the user an error message. */
@@ -1060,6 +1157,10 @@ function protectRanges() {
       var calculatedPriceColumnProtection = sheet.getRange(1, OPTS.ITEM_COLUMNS.TOTAL_PRICE.index,numDataRows, 1).protect();
       var financialOfficerRangeProtection = sheet.getRange(3, OPTS.ITEM_COLUMNS.OFFICER_EMAIL.index, numDataRows, OPTS.NUM_OFFICER_COLS).protect();
 
+      headerRangeProtection.removeEditors(headerRangeProtection.getEditors());
+      calculatedPriceColumnProtection.removeEditors(calculatedPriceColumnProtection.getEditors());
+      financialOfficerRangeProtection.removeEditors(financialOfficerRangeProtection.getEditors());
+
       headerRangeProtection.setDescription(adminProtectDescription);
       calculatedPriceColumnProtection.setDescription(adminProtectDescription);
       financialOfficerRangeProtection.setDescription(officerProtectDescription);
@@ -1071,6 +1172,7 @@ function protectRanges() {
     } else if(sheetName !== userDataSheetName) {
       // Lock the entire sheet if not the user data sheet
       var sheetProtection = sheet.protect();
+      sheetProtection.removeEditors(sheetProtection.getEditors());
       sheetProtection.addEditors(financialOfficers);
     }
   });
@@ -1079,5 +1181,6 @@ function protectRanges() {
   var statusesProtection = SpreadsheetApp.getActiveSpreadsheet()
       .getRangeByName(OPTS.NAMED_RANGES.STATUSES).protect();
   statusesProtection.setDescription(adminProtectDescription);
+  statusesProtection.removeEditors(statusesProtection.getEditors());
   statusesProtection.addEditor(admin);
 }
