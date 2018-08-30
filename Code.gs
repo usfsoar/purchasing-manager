@@ -271,7 +271,7 @@ var STATUSES_DATA = {
   },
   AWAITING_PICKUP: {
     text: 'Awaiting Pickup',
-    allowedPrevious: ['Submitted', 'Approved'],
+    allowedPrevious: ['Submitted', 'Ordered'],
     actionText: {
       fastForward: 'Awaiting Pickup',
       selected: 'Mark selected items as awaiting pickup',
@@ -341,7 +341,7 @@ var STATUSES_DATA = {
   },
   DENIED: {
     text: 'Denied',
-    allowedPrevious: ['New', 'Submitted', 'Approved', 'Awaiting Info'],
+    allowedPrevious: ['New', 'Submitted', 'Ordered', 'Awaiting Info'],
     actionText: {
       fastForward: 'Denied',
       selected: 'Deny selected items',
@@ -375,7 +375,7 @@ var STATUSES_DATA = {
   },
   AWAITING_INFO: {
     text: 'Awaiting Info',
-    allowedPrevious: ['New', 'Submitted', 'Denied', 'Approved', 'Recieved'],
+    allowedPrevious: ['New', 'Submitted', 'Denied', 'Ordered', 'Recieved'],
     actionText: {
       fastForward: 'Awaiting Info',
       selected: 'Request more information for selected items'
