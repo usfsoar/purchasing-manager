@@ -435,11 +435,11 @@ function buildSlackMessages(
         /** Array of booleans with indexes that match officers. Only false if NO. */
         var officerNotifyOptions =
             getNamedRangeValues(OPTS.NAMED_RANGES.NOTIFY_APPROVED_OFFICERS)
-            .map(function(value) {return value !== 'NO'});
+            .map(function(value) {return value !== 'NO';});
         /** Emails of all the officers that do get notified. */
         var officerEmails =
             getNamedRangeValues(OPTS.NAMED_RANGES.APPROVED_OFFICERS)
-            .filter(function(email, index) {return officerNotifyOptions[index]});
+            .filter(function(email, index) {return officerNotifyOptions[index];});
         var officerUserTags = officerEmails.map(getSlackTagByEmail)
             .filter(function(slackTag) {return slackTag != '';});
         targetUserTagsString = makeListFromArray(officerUserTags, 'or');
@@ -502,6 +502,8 @@ function buildAndAddCustomMenu() {
     .addItem(STATUSES_DATA.NEW.actionText.all, markAllNew.name)
     .addItem(STATUSES_DATA.NEW.actionText.selected, markSelectedNew.name);
 
+  var fastFowardMenu = null;
+
   if (verifyFinancialOfficer()) {
     customMenu
       .addSeparator()
@@ -512,7 +514,7 @@ function buildAndAddCustomMenu() {
       .addItem(STATUSES_DATA.AWAITING_INFO.actionText.selected, markSelectedAwaitingInfo.name)
       .addItem(STATUSES_DATA.DENIED.actionText.selected, markSelectedDenied.name);
 
-    var fastFowardMenu = SpreadsheetApp.getUi()
+    fastFowardMenu = SpreadsheetApp.getUi()
       .createMenu(OPTS.FAST_FORWARD_MENU.NAME)
       .addItem(STATUSES_DATA.NEW.actionText.fastForward, fastForwardSelectedNew.name)
       .addItem(STATUSES_DATA.SUBMITTED.actionText.fastForward, fastForwardSelectedSubmitted.name)
@@ -534,7 +536,7 @@ function buildAndAddCustomMenu() {
   }
 
   customMenu.addToUi();
-  fastFowardMenu.addToUi();
+  if (verifyFinancialOfficer()) fastFowardMenu.addToUi();
 }
 
 /** Show the user an error message. */
@@ -1059,12 +1061,12 @@ function fastForwardItems(newStatus) {
       // If any of the past columns are blank, fill them in with current info
       pastUserColumnsValues.forEach(function(columnValues) {
         if(columnValues[currentValuesRowIndex][0].toString() === '') {
-          columnValues[currentValuesRowIndex][0] = currentOfficerEmail
+          columnValues[currentValuesRowIndex][0] = currentOfficerEmail;
         }
       });
       pastDateColumnsValues.forEach(function(columnValues) {
         if(columnValues[currentValuesRowIndex][0].toString() === '') {
-          columnValues[currentValuesRowIndex][0] = currentDate
+          columnValues[currentValuesRowIndex][0] = currentDate;
         }
       });
 
