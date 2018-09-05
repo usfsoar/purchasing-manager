@@ -25,6 +25,9 @@ var OPTS = {
     /** Range containing the email addresses of approved officers.
      * 1 column, 5 rows (no header). */
     APPROVED_OFFICERS: 'ApprovedOfficers',
+    /** Range containing the YES or NO values for whether to notify the
+     * financial officer with the same index. 1 column, 5 rows (no header). */
+    NOTIFY_APPROVED_OFFICERS: 'NotifyApprovedOfficers',
     /** Range containing the names of all project-specific sheets.
      * 1 column, 12 rows (no header). */
     PROJECT_SHEETS: 'ProjectSheets',
@@ -429,9 +432,16 @@ function buildSlackMessages(
         break;
 
       case OPTS.SLACK.TARGET_USERS.OFFICERS:
-        var officerEmails = getNamedRangeValues(OPTS.NAMED_RANGES.APPROVED_OFFICERS);
+        /** Array of booleans with indexes that match officers. Only false if NO. */
+        var officerNotifyOptions =
+            getNamedRangeValues(OPTS.NAMED_RANGES.NOTIFY_APPROVED_OFFICERS)
+            .map(function(value) {return value !== 'NO'});
+        /** Emails of all the officers that do get notified. */
+        var officerEmails =
+            getNamedRangeValues(OPTS.NAMED_RANGES.APPROVED_OFFICERS)
+            .filter(function(email, index) {return officerNotifyOptions[index]});
         var officerUserTags = officerEmails.map(getSlackTagByEmail)
-        .filter(function(slackTag) {return slackTag != '';});
+            .filter(function(slackTag) {return slackTag != '';});
         targetUserTagsString = makeListFromArray(officerUserTags, 'or');
         break;
 
