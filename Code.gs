@@ -835,9 +835,10 @@ function markItems(newStatus, markAll) {
   var allRowsValid = true;
 
   selectionsLoop: for(var i = 0; i < selectedRanges.length; i++) {
-    var rangeValues = selectedRanges[i].getValues();
+    var range = selectedRanges[i];
+    var rangeValues = range.getValues();
 
-    for(var j = 0; j < selectedRanges.length; j++) {
+    for(var j = 0; j < range.getNumRows(); j++) {
       /** Array of row values. */
       var row = rangeValues[j];
       // If current status is not in allowed statuses, don't verify, just skip
