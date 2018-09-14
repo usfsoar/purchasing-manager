@@ -841,6 +841,7 @@ function markItems(newStatus, markAll) {
     for(var j = 0; j < range.getNumRows(); j++) {
       /** Array of row values. */
       var row = rangeValues[j];
+      Logger.log(row);
       // If current status is not in allowed statuses, don't verify, just skip
       // minus 1 to convert from 1-based Sheets column number to 0-based array index
       if(!isCurrentStatusAllowed(row[OPTS.ITEM_COLUMNS.STATUS.index - 1].toString(), newStatus)) continue;
