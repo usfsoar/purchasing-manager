@@ -1095,6 +1095,8 @@ function markItems(newStatus, markAll) {
         + makeListFromArray(quotedFromStatuses, 'or')
         + ' to "' + newStatus.text + '."');
 
+    var projectColor = currentSheet.getTabColor();
+
     if(items.length !== 0) {
       slackNotifyItems(
         newStatus,
@@ -1102,7 +1104,8 @@ function markItems(newStatus, markAll) {
         itemRequestors,
         items,
         projectName,
-        projectSheetUrl
+        projectSheetUrl,
+        projectColor
       );
     }
   }
@@ -1333,7 +1336,7 @@ function sendSlackMessage(messageData, webhook) {
  * @param {string} projectName Name of the relevant projec.
  * @param {string} projectSheetUrl Link to the relevant project's sheet in the
  * databse.
- * @returns {string[]} Filled in message strings.
+ * @param {string} projectColor Tab color of the project's sheet.
  */
 function slackNotifyItems(
   statusData,
@@ -1341,7 +1344,8 @@ function slackNotifyItems(
   requestors,
   itemsMarked,
   projectName,
-  projectSheetUrl) {
+  projectSheetUrl,
+  projectColor) {
   statusData.slack.channelWebhooks.forEach(function(webhook, index) {
     var messages = [];
     Logger.log(itemsMarked);
@@ -1373,10 +1377,11 @@ function slackNotifyItems(
           buildItemListSlackAttachment(itemsMarked),
           {
             type: "button",
-            text: "Open Sheet 🔗",
+            text: "↗ Open Sheet",
             url: projectSheetUrl
           }
-        ]
+        ],
+        color: projectColor
       }
     ];
 
@@ -1404,14 +1409,14 @@ function buildItemListSlackAttachment(items) {
      * This will be parsed and sent as a monospace message when the button is
      * clicked. {NL} will be replaced by newlines (\n) and {TAB} by tabs (\t).
      */
-    value: "Item Name                      | Qty | Total  | Category{NL}"
+    value: "Item Name                           | Qty | Total  | Category{NL}"
   };
 
   var sep = "   ";
 
   items.forEach(function(currentItem) {
     var currentItemString =
-        truncateString(currentItem.name, 30, true) + sep +
+        truncateString(currentItem.name, 35, true) + sep +
         truncateString(currentItem.quantity, 3, true, true) + sep +
         truncateString("$" + currentItem.totalPrice.toFixed(2), 5, true, true) + sep +
         currentItem.category + "{NL}";
