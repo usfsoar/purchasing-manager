@@ -702,11 +702,17 @@ function makeListFromArray(listArray, conjunction, noOxfordComma) {
  * Truncates the string if it's longer than `chars` and adds "..." to the end.
  * @param {string} longString The string to shorten.
  * @param {number} chars The maximum number of characters in the final string.
+ * @param {boolean} pad If true, will add padding to end of string to make it 
+ * the target length.
+ * @param {boolean} padOnly If true, won't truncate ever, will just pad.
  * @returns {string} The truncated string.
  */
-function truncateString(longString, chars) {
+function truncateString(longString, chars, pad, padOnly) {
   if(longString.length > chars) {
-    return longString.slice(0, chars - 4) + "...";
+    longString = longString.slice(0, chars - 4) + "...";
+  }
+  if(pad) {
+    longString += ' '.repeat(chars - longString.length);
   }
   return longString;
 }
@@ -882,10 +888,14 @@ function markItems(newStatus, markAll) {
       requestorColumnValues = getColumnRange(OPTS.ITEM_COLUMNS.REQUEST_EMAIL.index).getValues();
     }
 
+    /* List of items, for sending to Slack */
+    var items = [];
+
     // Loop through the ranges
     for(var k = 0; k < selectedRanges.length; k++) {
       var range = selectedRanges[k];
       var rangeStartIndex = range.getRow() - 1;
+      var rangeValues = range.getValues();
 
       // Loop through the rows in the range
       rowLoop: for (var l = 0; l < range.getNumRows(); l++) {
@@ -929,7 +939,14 @@ function markItems(newStatus, markAll) {
           pushIfNewAndTruthy(itemRequestors, requestorColumnValues[currentValuesRowIndex][0].toString());
         }
 
-        numMarked++;
+        items.push({
+          name: rangeValues[l][OPTS.ITEM_COLUMNS.NAME],
+          quantity: rangeValues[l][OPTS.ITEM_COLUMNS.QUANTITY],
+          totalPrice: rangeValues[l][OPTS.ITEM_COLUMNS.TOTAL_PRICE],
+          category: rangeValues[l][OPTS.ITEM_COLUMNS.CATEGORY],
+          requestorComments: rangeValues[l][OPTS.ITEM_COLUMNS.REQUEST_COMMENTS],
+          officerComments: rangeValues[l][OPTS.ITEM_COLUMNS.OFFICER_COMMENTS],
+        });
       }
     }
 
@@ -956,7 +973,7 @@ function markItems(newStatus, markAll) {
         newStatus,
         currentUserFullName,
         itemRequestors,
-        numMarked,
+        items,
         projectName,
         projectSheetUrl
       );
@@ -1162,12 +1179,9 @@ function validateRow(rowValues, newStatus) {
 
 /**
  * Send a message to the Slack channel.
- * @param {string} message The message to send.
+ * @param {Object} messageData The message to send, according to the Slack API.
  */
-function sendSlackMessage(message, webhook) {
-  var messageData = {
-    text: message
-  };
+function sendSlackMessage(messageData, webhook) {
   var requestOptions = {
     method: 'post',
     payload: JSON.stringify(messageData),
@@ -1182,7 +1196,13 @@ function sendSlackMessage(message, webhook) {
  * @param {string} userFullName Full Name of the current user.
  * @param {string[]} requestors Emails of people who requested the items
  * affected by this action.
- * @param {number} numMarked Number of items affected by this action.
+ * @param {Object[]} itemsMarked Data about all items affected by this action.
+ * @param {string} itemsMarked.name
+ * @param {string} itemsMarked.quantity
+ * @param {number} itemsMarked.totalPrice
+ * @param {string} itemsMarked.category
+ * @param {string} itemsMarked.requestorComments
+ * @param {string} itemsMarked.officerComments
  * @param {string} projectName Name of the relevant projec.
  * @param {string} projectSheetUrl Link to the relevant project's sheet in the
  * databse.
@@ -1192,7 +1212,7 @@ function slackNotifyItems(
   statusData,
   userFullName,
   requestors,
-  numMarked,
+  itemsMarked,
   projectName,
   projectSheetUrl) {
   statusData.slack.channelWebhooks.forEach(function(webhook, index) {
@@ -1202,7 +1222,7 @@ function slackNotifyItems(
           statusData,
           userFullName,
           requestors,
-          numMarked,
+          itemsMarked.length,
           projectName,
           projectSheetUrl);
     } else {
@@ -1210,14 +1230,65 @@ function slackNotifyItems(
           statusData,
           userFullName,
           requestors,
-          numMarked,
+          itemsMarked.length,
           projectName,
           projectSheetUrl,
           true);
     }
 
+    messages.map(function(messageText) {return {text: messageText}});
+    messages[messages.length - 1].attachments = [
+      {
+        callback_id: "itemNotification",
+        fallback: "<" + projectSheetUrl + "Show Items>",
+        actions: [
+          buildItemListSlackAttachment(),
+          {
+            type: "button",
+            text: "Open Item Sheet",
+            url: projectSheetUrl
+          }
+        ]
+      }
+    ]
+
     messages.forEach(function(message) {sendSlackMessage(message, webhook);});
   });
+}
+
+/**
+ * Build a Slack button attachment that sends a request to show the full item 
+ * list on click.
+ * @param {Object[]} items Data about all items to list.
+ * @param {string} items.name
+ * @param {string} items.quantity
+ * @param {number} items.totalPrice
+ * @param {string} items.category
+ * @param {string} items.requestorComments
+ * @param {string} items.officerComments
+ */
+function buildItemListSlackAttachment(items) {
+  var attachment = {
+    type: "button",
+    text: "Show Item List",
+    name: "showItemList",
+    value: "Item Name                      | Qty | Total | Category\n"
+  }
+
+  var sep = "   ";
+
+  attachment.value = items.reduce(function(itemsString, currentItem) {
+    var currentItemString =
+        truncateString(currentItem.name, 30, true) + sep +
+        truncateString(currentItem.quantity, 3, true, true) + sep +
+        truncateString("$" + currentItem.totalPrice.toFixed(2), 5, true, true) + sep +
+        currentItem.category + "\n";
+    if(currentItem.requestorComments) currentItemString += "\tNote: \"" + currentItem.requestorComments + "\"\n";
+    if(currentItem.requestorComments) currentItemString += "\tOfficer Note: \"" + currentItem.requestorComments + "\"\n";
+    return itemsString + currentItemString;
+  });
+
+  return attachment;
 }
 
 /**
