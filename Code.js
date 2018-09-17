@@ -93,6 +93,16 @@ var OPTS = {
   SHEET_NAMES: {
     USERS: "Users"
   },
+  DASHBOARD_CELLS: {
+    TOTAL_BUDGET: {
+      row: 4, // 1-based index!
+      column: 3,
+    },
+    TOTAL_EXPENSES: {
+      row: 4,
+      column: 4
+    }
+  },
   /** Slack API pieces */
   SLACK: {
     KYBER_TASK_REACTION: ':ballot_box_with_check:',
@@ -402,6 +412,17 @@ var STATUSES_DATA = {
   }
 };
 
+// Handle post request from Slack
+function doPost(e) {
+  // Get message
+  var text = e.parameter.text;
+  var sheetName = getSheetNameFromProjectName(text, true);
+  if(sheetName !== null) text = sheetName;
+  var message = buildProjectStatusSlackMessage(text);
+
+  return ContentService.createTextOutput(JSON.stringify(message)).setMimeType(ContentService.MimeType.JSON);
+}
+
 /**
  * Build normal strings from the status' templates.
  * @param {Status} statusData Data for the target status.
@@ -461,6 +482,70 @@ function buildSlackMessages(
         .replace('{projectSheetUrl}', projectSheetUrl)
         .replace('{plural}', numMarked !== 1 ? 's' : '');
   });
+}
+
+/**
+ * Build a project status message to be used in Slack, with current information
+ * about the given project.
+ * @param {string} projectSheetName The name of the Sheet of the project.
+ * @returns {Object} A valid Slack message with attachments.
+ */
+function buildProjectStatusSlackMessage(projectSheetName) {
+  if(!checkIfProjectSheet(projectSheetName)) return "Error: Invalid project name.";
+
+  var projectName = getProjectNameFromSheetName(projectSheetName);
+  var dashboardSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(projectSheetName + " Dashboard");
+  var totalBudget = dashboardSheet.getRange(
+      OPTS.DASHBOARD_CELLS.TOTAL_BUDGET.row,
+      OPTS.DASHBOARD_CELLS.TOTAL_BUDGET.column).getValue();
+  var totalExpenses = dashboardSheet.getRange(
+      OPTS.DASHBOARD_CELLS.TOTAL_EXPENSES.row,
+      OPTS.DASHBOARD_CELLS.TOTAL_EXPENSES.column).getValue();
+
+  var budgetRemaining = (totalBudget - totalExpenses).toFixed(2);
+  var percentBudgetRemaining = (budgetRemaining / totalBudget * 100).toFixed(0);
+
+  var dashboardSheetUrl = SpreadsheetApp.getActiveSpreadsheet().getUrl() + "#gid=" + dashboardSheet.getSheetId();
+
+  var projectSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(projectSheetName);
+  var projectSheetUrl = SpreadsheetApp.getActiveSpreadsheet().getUrl() + "#gid=" + projectSheet.getSheetId();
+
+  return {
+        "response_type": "in_channel",
+        "attachments": [
+            {
+                "fallback": "The " + projectName + " project has $" + budgetRemaining + " (or " + percentBudgetRemaining + "%) remaining, out of a total annual budget of $" + totalBudget.toFixed(2) + ". For more details, see the <" + dashboardSheetUrl + "|project dashboard>.",
+                "color": dashboardSheet.getTabColor(),
+                "title": projectName + " Budget Status",
+                "text": "<" + dashboardSheetUrl + "|Project Dashboard> | <" + projectSheetUrl + "|Project Purchasing Sheet>\nThis is the latest budget information from the SOAR Purchasing Database:",
+                "fields": [
+                  {
+                    "title": "Total Budget",
+                    "value": "$" + totalBudget.toFixed(2),
+                    "short": true
+                  },
+                  {
+                    "title": "Percent Remaining",
+                    "value": percentBudgetRemaining + "%",
+                    "short": true
+                  },
+                  {
+                    "title": "Total Expenses",
+                    "value": "$" + totalExpenses.toFixed(2),
+                    "short": true
+                  },
+                  {
+                    "title": "Amount Remaining",
+                    "value": "$" + budgetRemaining,
+                    "short": true
+                  }
+                ],
+                "footer": "SOAR Purchasing Database",
+                "footer_icon": "http://www.usfsoar.com/wp-content/uploads/2018/09/595bae9a-c1f9-4b46-880e-dc6d4e1d0dac.png",
+                "ts": Number(new Date())
+            }
+        ]
+      };
 }
 
 /**
@@ -774,10 +859,12 @@ function getAllRows() {
 /**
  * Checks if the current sheet is in the list of project sheets. If not,
  * shows a message in the UI and returns false.
+ * @param {?string} sheetName Name of the sheet to check. If empty, uses current sheet.
  * @returns {boolean} True if a project sheet is active.
  */
-function checkIfProjectSheet() {
-  var currentSheetName = SpreadsheetApp.getActiveSheet().getName();
+function checkIfProjectSheet(sheetName) {
+  var currentSheetName = sheetName || SpreadsheetApp.getActiveSheet().getName();
+
   var projectSheetNames = getNamedRangeValues(OPTS.NAMED_RANGES.PROJECT_SHEETS);
 
   if(projectSheetNames.indexOf(currentSheetName) === -1) {
@@ -847,6 +934,7 @@ function markItems(newStatus, markAll) {
     for(var j = 0; j < range.getNumRows(); j++) {
       /** Array of row values. */
       var row = rangeValues[j];
+      Logger.log(row);
       // If current status is not in allowed statuses, don't verify, just skip
       // minus 1 to convert from 1-based Sheets column number to 0-based array index
       if(!isCurrentStatusAllowed(row[OPTS.ITEM_COLUMNS.STATUS.index - 1].toString(), newStatus)) continue;
@@ -1294,8 +1382,10 @@ function buildItemListSlackAttachment(items) {
 /**
  * Get the full name of the project that matches the name of the sheet.
  * @param {string} sheetName Name of the project's sheet.
+ * @param {boolean} nullIfMissing If present, will return null if the value is not found.
+ * @returns {?string} String, unless nullIfMissing is specified.
  */
-function getProjectNameFromSheetName(sheetName) {
+function getProjectNameFromSheetName(sheetName, nullIfMissing) {
   var projectsData = SpreadsheetApp
     .getActiveSpreadsheet()
     .getRange(OPTS.NAMED_RANGES.PROJECT_NAMES_TO_SHEETS)
@@ -1305,6 +1395,27 @@ function getProjectNameFromSheetName(sheetName) {
     if(projectsData[i][1] === sheetName) return projectsData[i][0];
   }
 
+  if(nullIfMissing) return null;
+  return '_Error: Project Not Found_';
+}
+
+/**
+ * Get the sheet name that matches the project.
+ * @param {string} projectName Name of the project.
+ * @param {boolean} nullIfMissing If present, will return null if the value is not found.
+ * @returns {?string} String, unless nullIfMissing is specified.
+ */
+function getSheetNameFromProjectName(projectName, nullIfMissing) {
+  var projectsData = SpreadsheetApp
+    .getActiveSpreadsheet()
+    .getRange(OPTS.NAMED_RANGES.PROJECT_NAMES_TO_SHEETS)
+    .getValues();
+
+  for(var i = 0; i < projectsData.length; i++) {
+    if(projectsData[i][0] === projectName) return projectsData[i][1];
+  }
+
+  if(nullIfMissing) return null;
   return '_Error: Project Not Found_';
 }
 
