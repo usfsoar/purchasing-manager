@@ -1380,8 +1380,6 @@ function slackNotifyItems(
       }
     ];
 
-    Logger.log(JSON.stringify(messages));
-
     messages.forEach(function(message) {sendSlackMessage(message, webhook);});
   });
 }
