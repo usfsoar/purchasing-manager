@@ -522,13 +522,17 @@ function buildSlackMessages(
 /**
  * Build a project status message to be used in Slack, with current information
  * about the given project.
- * @param {string} projectSheetName The name of the Sheet of the project.
+ * @param {string} project The name of the project.
  * @returns {Object} A valid Slack message with attachments.
  */
-function buildProjectStatusSlackMessage(projectSheetName) {
-  if(!checkIfProjectSheet(projectSheetName)) return "Error: Invalid project name.";
+function buildProjectStatusSlackMessage(project) {
+  var projectSheetName = getSheetNameFromProjectName(project, true) || project;
+  if(!checkIfProjectSheet(projectSheetName)) return {
+    "response_type": "ephemeral",
+    "text": "Sorry, I don't recognize that project."
+  }
+  var projectName = getProjectNameFromSheetName(project);
 
-  var projectName = getProjectNameFromSheetName(projectSheetName);
   var dashboardSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(projectSheetName + " Dashboard");
   var totalBudget = dashboardSheet.getRange(
       OPTS.DASHBOARD_CELLS.TOTAL_BUDGET.row,
@@ -577,7 +581,7 @@ function buildProjectStatusSlackMessage(projectSheetName) {
                 ],
                 "footer": "SOAR Purchasing Database",
                 "footer_icon": "http://www.usfsoar.com/wp-content/uploads/2018/09/595bae9a-c1f9-4b46-880e-dc6d4e1d0dac.png",
-                "ts": Number(new Date())
+                "ts": new Date().getTime() / 1000
             }
         ]
       };
