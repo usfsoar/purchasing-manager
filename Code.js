@@ -194,7 +194,7 @@ var STATUSES_DATA = {
       targetUsers: OPTS.SLACK.TARGET_USERS.OFFICERS,
       messageTemplates: [
         '{userTags} React with ' + OPTS.SLACK.KYBER_TASK_REACTION + ' to the following message if you\'re going to review / submit these items:',
-        '{emoji} {userFullName} has submitted {numMarked} new item{plural} to be purchased for {projectName}. *<{projectSheetUrl}|View Items>*'
+        '{emoji} {userFullName} has submitted {numMarked} new item{plural} to be purchased for {projectName}.'
       ],
       channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
@@ -226,7 +226,7 @@ var STATUSES_DATA = {
       emoji: ':white_circle:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *submitted* to Student Government. *<{projectSheetUrl}|View Items>*'
+        '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *submitted* to Student Government.'
       ],
       channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
@@ -260,7 +260,7 @@ var STATUSES_DATA = {
       emoji: ':white_circle:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *ordered* by Student Government. *<{projectSheetUrl}|View Items>*'
+        '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *ordered* by Student Government.'
       ],
       channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
@@ -293,7 +293,7 @@ var STATUSES_DATA = {
       targetUsers: OPTS.SLACK.TARGET_USERS.CHANNEL,
       messageTemplates: [
         '{userTags} React with ' + OPTS.SLACK.KYBER_TASK_REACTION + ' to the following message if you\'re going to pickup these items:',
-        '{emoji} {userFullName} marked {numMarked} item{plural} for {projectName} as awaiting pickup from Student Business Services in MSC4300. *<{projectSheetUrl}|View Items>*'
+        '{emoji} {userFullName} marked {numMarked} item{plural} for {projectName} as awaiting pickup from Student Business Services in MSC4300.'
       ],
       channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.RECIEVING],
     },
@@ -326,7 +326,7 @@ var STATUSES_DATA = {
       emoji: ':heavy_check_mark:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as received (picked up). *<{projectSheetUrl}|View Items>*'
+        '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as received (picked up).'
       ],
       channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING, SECRET_OPTS.SLACK.WEBHOOKS.RECIEVING],
     },
@@ -359,7 +359,7 @@ var STATUSES_DATA = {
       emoji: ':red_circle:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        '{emoji} {userTags} {userFullName} *denied* {numMarked} item{plural} for {projectName} (_see comments in database_). *<{projectSheetUrl}|View Items>*'
+        '{emoji} {userTags} {userFullName} *denied* {numMarked} item{plural} for {projectName} (_see comments in database_).'
       ],
       channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
@@ -391,7 +391,7 @@ var STATUSES_DATA = {
       emoji: ':black_circle:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        '{emoji} {userTags} {userFullName} requested more info for {numMarked} item{plural} for {projectName} (_see comments in database_). *<{projectSheetUrl}|View Items>*'
+        '{emoji} {userTags} {userFullName} requested more info for {numMarked} item{plural} for {projectName} (_see comments in database_).'
       ],
       channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
