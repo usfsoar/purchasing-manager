@@ -121,7 +121,9 @@ var OPTS = {
       REQUESTORS: 'REQUESTORS',
       /** Just all the listed Financial Officers. */
       OFFICERS: 'OFFICERS',
-    }
+    },
+    STATUS_SLASH_COMMAND: 'budgetstatus',
+    ITEM_LIST_ACTION_NAME: 'listItems'
   },
   /** Number of adjacent officer columns in the project sheets. */
   NUM_OFFICER_COLS: 7
@@ -389,7 +391,7 @@ var STATUSES_DATA = {
       emoji: ':black_circle:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        '{emoji} {userTags} {userFullName} requested for info for {numMarked} item{plural} for {projectName} (_see comments in database_). *<{projectSheetUrl}|View Items>*'
+        '{emoji} {userTags} {userFullName} requested more info for {numMarked} item{plural} for {projectName} (_see comments in database_). *<{projectSheetUrl}|View Items>*'
       ],
       channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
@@ -414,14 +416,47 @@ var STATUSES_DATA = {
 
 // Handle post request from Slack
 function doPost(e) {
-  // Get message
-  var text = e.parameter.text;
-  var sheetName = getSheetNameFromProjectName(text, true);
-  if(sheetName !== null) text = sheetName;
-  var message = buildProjectStatusSlackMessage(text);
+  var message = {text: "Error, command not found."};
+  if(e.parameter.command == "/budgetstatus") {
+    // If the budgetStatus command, send the budgetStatus message
+    var text = e.parameter.text;
+    var sheetName = getSheetNameFromProjectName(text, true);
+    if(sheetName !== null) text = sheetName;
+    message = buildProjectStatusSlackMessage(text);
+
+  } else if(e.parameter.payload) {
+    // Else maybe it's an interactive message command. Parse the payload and check.
+    var payload = JSON.parse(e.parameter.payload);
+    console.log(payload);
+
+    if(payload.type === "interactive_message"
+        && payload.actions
+        && payload.actions[0].name === OPTS.SLACK.ITEM_LIST_ACTION_NAME) {
+      var parsedText = payload.actions[0].value.replaceAll("{NL}", "\n").replaceAll("{TAB}", "\t");
+
+      message = {
+        response_type: "ephemeral",
+        replace_original: false,
+        text: "Here is a list of items that were affected by that action:\n```\n" + parsedText + "\n```",
+      };
+    }
+  }
 
   return ContentService.createTextOutput(JSON.stringify(message)).setMimeType(ContentService.MimeType.JSON);
 }
+
+/**
+ * Replace all occurrences of a string within another string.
+ * @param {string} search The string to search in. Not modified.
+ * @param {string} replacement The search term to match.
+ * @returns {string}
+ * @todo Make NOT a prototype modifier (only acceptable because this is GAS and
+ * the JS never gets updated anyway).
+ */
+String.prototype.replaceAll = function(search, replacement) {
+  var target = this;
+  return target.replace(new RegExp(search, 'g'), replacement);
+};
 
 /**
  * Build normal strings from the status' templates.
@@ -474,13 +509,13 @@ function buildSlackMessages(
 
   return statusData.slack.messageTemplates.map(function(template, index) {
     return template
-        .replace('{emoji}', statusData.slack.emoji)
-        .replace('{userTags}', !dontTagUsers ? (targetUserTagsString + ':') : '')
-        .replace('{userFullName}', userFullName)
-        .replace('{numMarked}', numMarked.toString())
-        .replace('{projectName}', projectName)
-        .replace('{projectSheetUrl}', projectSheetUrl)
-        .replace('{plural}', numMarked !== 1 ? 's' : '');
+        .replaceAll('{emoji}', statusData.slack.emoji)
+        .replaceAll('{userTags}', !dontTagUsers ? (targetUserTagsString + ':') : '')
+        .replaceAll('{userFullName}', userFullName)
+        .replaceAll('{numMarked}', numMarked.toString())
+        .replaceAll('{projectName}', projectName)
+        .replaceAll('{projectSheetUrl}', projectSheetUrl)
+        .replaceAll('{plural}', numMarked !== 1 ? 's' : '');
   });
 }
 
@@ -787,11 +822,20 @@ function makeListFromArray(listArray, conjunction, noOxfordComma) {
  * Truncates the string if it's longer than `chars` and adds "..." to the end.
  * @param {string} longString The string to shorten.
  * @param {number} chars The maximum number of characters in the final string.
+ * @param {boolean} pad If true, will add padding to end of string to make it 
+ * the target length.
+ * @param {boolean} padOnly If true, won't truncate ever, will just pad.
  * @returns {string} The truncated string.
  */
-function truncateString(longString, chars) {
-  if(longString.length > chars) {
-    return longString.slice(0, chars - 4) + "...";
+function truncateString(longString, chars, pad, padOnly) {
+  longString = longString.toString();
+
+  if(longString.length > chars && !padOnly) {
+    longString = longString.slice(0, chars - 4) + "...";
+  }
+  if(pad) {
+    var padding = chars - longString.length > 0 ? chars - longString.length : 0;
+    for(var i = 0; i < padding; i++) longString += " ";
   }
   return longString;
 }
@@ -928,7 +972,6 @@ function markItems(newStatus, markAll) {
     for(var j = 0; j < range.getNumRows(); j++) {
       /** Array of row values. */
       var row = rangeValues[j];
-      Logger.log(row);
       // If current status is not in allowed statuses, don't verify, just skip
       // minus 1 to convert from 1-based Sheets column number to 0-based array index
       if(!isCurrentStatusAllowed(row[OPTS.ITEM_COLUMNS.STATUS.index - 1].toString(), newStatus)) continue;
@@ -970,10 +1013,14 @@ function markItems(newStatus, markAll) {
       requestorColumnValues = getColumnRange(OPTS.ITEM_COLUMNS.REQUEST_EMAIL.index).getValues();
     }
 
+    /* List of items, for sending to Slack */
+    var items = [];
+
     // Loop through the ranges
     for(var k = 0; k < selectedRanges.length; k++) {
       var range = selectedRanges[k];
       var rangeStartIndex = range.getRow() - 1;
+      var rangeValues = range.getValues();
 
       // Loop through the rows in the range
       rowLoop: for (var l = 0; l < range.getNumRows(); l++) {
@@ -1017,9 +1064,18 @@ function markItems(newStatus, markAll) {
           pushIfNewAndTruthy(itemRequestors, requestorColumnValues[currentValuesRowIndex][0].toString());
         }
 
-        numMarked++;
+        items.push({
+          name: rangeValues[l][OPTS.ITEM_COLUMNS.NAME.index - 1],
+          quantity: rangeValues[l][OPTS.ITEM_COLUMNS.QUANTITY.index - 1],
+          totalPrice: rangeValues[l][OPTS.ITEM_COLUMNS.TOTAL_PRICE.index - 1],
+          category: rangeValues[l][OPTS.ITEM_COLUMNS.CATEGORY.index - 1],
+          requestorComments: rangeValues[l][OPTS.ITEM_COLUMNS.REQUEST_COMMENTS.index - 1],
+          officerComments: rangeValues[l][OPTS.ITEM_COLUMNS.OFFICER_COMMENTS.index - 1],
+        });
+
       }
     }
+
 
     // Write the cached values
     statusColumn.setValues(statusColumnValues);
@@ -1035,16 +1091,16 @@ function markItems(newStatus, markAll) {
     /** All of the possible 'from' statuses, but with double quotes around them. */
     var quotedFromStatuses = newStatus.allowedPrevious.map(wrapInDoubleQuotes);
 
-    successNotification(numMarked + ' items marked from '
+    successNotification(items.length + ' items marked from '
         + makeListFromArray(quotedFromStatuses, 'or')
         + ' to "' + newStatus.text + '."');
 
-    if(numMarked !== 0) {
+    if(items.length !== 0) {
       slackNotifyItems(
         newStatus,
         currentUserFullName,
         itemRequestors,
-        numMarked,
+        items,
         projectName,
         projectSheetUrl
       );
@@ -1250,12 +1306,9 @@ function validateRow(rowValues, newStatus) {
 
 /**
  * Send a message to the Slack channel.
- * @param {string} message The message to send.
+ * @param {Object} messageData The message to send, according to the Slack API.
  */
-function sendSlackMessage(message, webhook) {
-  var messageData = {
-    text: message
-  };
+function sendSlackMessage(messageData, webhook) {
   var requestOptions = {
     method: 'post',
     payload: JSON.stringify(messageData),
@@ -1270,7 +1323,13 @@ function sendSlackMessage(message, webhook) {
  * @param {string} userFullName Full Name of the current user.
  * @param {string[]} requestors Emails of people who requested the items
  * affected by this action.
- * @param {number} numMarked Number of items affected by this action.
+ * @param {Object[]} itemsMarked Data about all items affected by this action.
+ * @param {string} itemsMarked.name
+ * @param {string} itemsMarked.quantity
+ * @param {number} itemsMarked.totalPrice
+ * @param {string} itemsMarked.category
+ * @param {string} itemsMarked.requestorComments
+ * @param {string} itemsMarked.officerComments
  * @param {string} projectName Name of the relevant projec.
  * @param {string} projectSheetUrl Link to the relevant project's sheet in the
  * databse.
@@ -1280,17 +1339,18 @@ function slackNotifyItems(
   statusData,
   userFullName,
   requestors,
-  numMarked,
+  itemsMarked,
   projectName,
   projectSheetUrl) {
   statusData.slack.channelWebhooks.forEach(function(webhook, index) {
     var messages = [];
+    Logger.log(itemsMarked);
     if(index === 0) {
       messages = buildSlackMessages(
           statusData,
           userFullName,
           requestors,
-          numMarked,
+          itemsMarked.length,
           projectName,
           projectSheetUrl);
     } else {
@@ -1298,14 +1358,73 @@ function slackNotifyItems(
           statusData,
           userFullName,
           requestors,
-          numMarked,
+          itemsMarked.length,
           projectName,
           projectSheetUrl,
           true);
     }
 
+    messages = messages.map(function(messageText) {return {text: messageText};});
+    messages[messages.length - 1].attachments = [
+      {
+        callback_id: "itemNotification",
+        fallback: "<" + projectSheetUrl + "|View Items>",
+        actions: [
+          buildItemListSlackAttachment(itemsMarked),
+          {
+            type: "button",
+            text: "Open Sheet 🔗",
+            url: projectSheetUrl
+          }
+        ]
+      }
+    ];
+
+    Logger.log(JSON.stringify(messages));
+
     messages.forEach(function(message) {sendSlackMessage(message, webhook);});
   });
+}
+
+/**
+ * Build a Slack button attachment that sends a request to show the full item 
+ * list on click.
+ * @param {Object[]} items Data about all items to list.
+ * @param {string} items.name
+ * @param {string} items.quantity
+ * @param {number} items.totalPrice
+ * @param {string} items.category
+ * @param {string} items.requestorComments
+ * @param {string} items.officerComments
+ */
+function buildItemListSlackAttachment(items) {
+  var attachment = {
+    type: "button",
+    text: "List Items",
+    name: OPTS.SLACK.ITEM_LIST_ACTION_NAME,
+    /**
+     * This will be parsed and sent as a monospace message when the button is
+     * clicked. {NL} will be replaced by newlines (\n) and {TAB} by tabs (\t).
+     */
+    value: "Item Name                      | Qty | Total  | Category{NL}"
+  };
+
+  var sep = "   ";
+
+  items.forEach(function(currentItem) {
+    var currentItemString =
+        truncateString(currentItem.name, 30, true) + sep +
+        truncateString(currentItem.quantity, 3, true, true) + sep +
+        truncateString("$" + currentItem.totalPrice.toFixed(2), 5, true, true) + sep +
+        currentItem.category + "{NL}";
+    if(currentItem.requestorComments) currentItemString += "{TAB}Note: \"" + currentItem.requestorComments + "\"{NL}";
+    if(currentItem.officerComments) currentItemString += "{TAB}Officer Note: \"" + currentItem.officerComments + "\"{NL}";
+    attachment.value += currentItemString;
+  });
+
+  attachment.value = truncateString(attachment.value, 2000);
+
+  return attachment;
 }
 
 /**
