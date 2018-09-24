@@ -123,7 +123,9 @@ var OPTS = {
       OFFICERS: 'OFFICERS',
     },
     STATUS_SLASH_COMMAND: 'budgetstatus',
-    ITEM_LIST_ACTION_NAME: 'listItems'
+    ITEM_LIST_ACTION_NAME_LEGACY: 'listItems',
+    ITEM_LIST_ACTION_NAME: 'showItemList',
+    SOAR_ICON: 'http://www.usfsoar.com/wp-content/uploads/2018/09/595bae9a-c1f9-4b46-880e-dc6d4e1d0dac.png'
   },
   /** Number of adjacent officer columns in the project sheets. */
   NUM_OFFICER_COLS: 7
@@ -414,9 +416,47 @@ var STATUSES_DATA = {
   }
 };
 
+var TEST_STATUS = {
+  text: 'Test',
+  allowedPrevious: ['', 'Test'],
+  actionText: {
+    fastForward: 'Test',
+    selected: 'Test update item',
+  },
+  slack: {
+    emoji: ':checkered_flag:',
+    targetUsers: OPTS.SLACK.TARGET_USERS.CHANNEL,
+    messageTemplates: [
+      '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *test* by TEsting.'
+    ],
+    channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.DEV],
+  },
+  columns: {
+    user: null,
+    date: OPTS.ITEM_COLUMNS.UPDATE_DATE,
+  },
+  fastForwardColumns: {
+    user: [
+      OPTS.ITEM_COLUMNS.REQUEST_EMAIL,
+      OPTS.ITEM_COLUMNS.OFFICER_EMAIL
+    ],
+    date: [
+      OPTS.ITEM_COLUMNS.REQUEST_DATE,
+      OPTS.ITEM_COLUMNS.SUBMIT_DATE,
+    ],
+  },
+  fillInDefaults: true,
+  officersOnly: true,
+};
+
 // Handle post request from Slack
 function doPost(e) {
-  var message = {text: "Error, command not found."};
+  var message = {
+    response_type: "ephemeral",
+    replace_original: false,
+    text: "Error: command not found.",
+  };
+
   if(e.parameter.command == "/budgetstatus") {
     // If the budgetStatus command, send the budgetStatus message
     var text = e.parameter.text;
@@ -430,15 +470,20 @@ function doPost(e) {
     console.log(payload);
 
     if(payload.type === "interactive_message"
-        && payload.actions
-        && payload.actions[0].name === OPTS.SLACK.ITEM_LIST_ACTION_NAME) {
-      var parsedText = payload.actions[0].value.replaceAll("{NL}", "\n").replaceAll("{TAB}", "\t");
+        && payload.actions) {
+      if(payload.actions[0].name === OPTS.SLACK.ITEM_LIST_ACTION_NAME_LEGACY) {
+        var parsedText = payload.actions[0].value;
 
-      message = {
-        response_type: "ephemeral",
-        replace_original: false,
-        text: "Here is a list of items that were affected by that action:\n```\n" + parsedText + "\n```",
-      };
+        message = {
+          response_type: "ephemeral",
+          replace_original: false,
+          text: parsedText,
+        };
+      } else {
+        console.log("so far so good...")
+        message = JSON.parse(payload.actions[0].value)
+        console.log(message);
+      }
     }
   }
 
@@ -530,7 +575,7 @@ function buildProjectStatusSlackMessage(project) {
   if(!checkIfProjectSheet(projectSheetName)) return {
     "response_type": "ephemeral",
     "text": "Sorry, I don't recognize that project."
-  }
+  };
   var projectName = getProjectNameFromSheetName(project);
 
   var dashboardSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(projectSheetName + " Dashboard");
@@ -556,7 +601,7 @@ function buildProjectStatusSlackMessage(project) {
                 "fallback": "The " + projectName + " project has $" + budgetRemaining + " (or " + percentBudgetRemaining + "%) remaining, out of a total annual budget of $" + totalBudget.toFixed(2) + ". For more details, see the <" + dashboardSheetUrl + "|project dashboard>.",
                 "color": dashboardSheet.getTabColor(),
                 "title": projectName + " Budget Status",
-                "text": "<" + dashboardSheetUrl + "|Project Dashboard> | <" + projectSheetUrl + "|Project Purchasing Sheet>\nThis is the latest budget information from the SOAR Purchasing Database:",
+                "text": "This is the latest budget information from the SOAR Purchasing Database:",
                 "fields": [
                   {
                     "title": "Total Budget",
@@ -580,8 +625,18 @@ function buildProjectStatusSlackMessage(project) {
                   }
                 ],
                 "footer": "SOAR Purchasing Database",
-                "footer_icon": "http://www.usfsoar.com/wp-content/uploads/2018/09/595bae9a-c1f9-4b46-880e-dc6d4e1d0dac.png",
-                "ts": new Date().getTime() / 1000
+                "footer_icon": OPTS.SLACK.SOAR_ICON,
+                "ts": new Date().getTime() / 1000,
+                "actions": [{
+                    "type": "button",
+                    "text": "Open Dashboard ↗",
+                    "url": dashboardSheetUrl
+                  }, {
+                    "type": "button",
+                    "text": "Open Purchasing Sheet ↗",
+                    "url": projectSheetUrl
+                  }
+                ]
             }
         ]
       };
@@ -627,6 +682,7 @@ function buildAndAddCustomMenu() {
     .addItem(STATUSES_DATA.NEW.actionText.selected, markSelectedNew.name);
 
   var fastFowardMenu = null;
+  var testMenu = null;
 
   if (verifyFinancialOfficer()) {
     customMenu
@@ -657,10 +713,14 @@ function buildAndAddCustomMenu() {
     customMenu
       .addSeparator()
       .addItem('Refresh protections', protectRanges.name);
+    testMenu = SpreadsheetApp.getUi()
+      .createMenu("Test")
+      .addItem('Test Update', testUpdateItem.name);
   }
 
   customMenu.addToUi();
   if (verifyFinancialOfficer()) fastFowardMenu.addToUi();
+  if (verifyAdmin()) testMenu.addToUi();
 }
 
 /** Show the user an error message. */
@@ -1069,14 +1129,17 @@ function markItems(newStatus, markAll) {
         }
 
         items.push({
-          name: rangeValues[l][OPTS.ITEM_COLUMNS.NAME.index - 1],
-          quantity: rangeValues[l][OPTS.ITEM_COLUMNS.QUANTITY.index - 1],
-          totalPrice: rangeValues[l][OPTS.ITEM_COLUMNS.TOTAL_PRICE.index - 1],
-          category: rangeValues[l][OPTS.ITEM_COLUMNS.CATEGORY.index - 1],
+          name:              rangeValues[l][OPTS.ITEM_COLUMNS.NAME.index - 1],
+          quantity:          rangeValues[l][OPTS.ITEM_COLUMNS.QUANTITY.index - 1],
+          totalPrice:        rangeValues[l][OPTS.ITEM_COLUMNS.TOTAL_PRICE.index - 1],
+          unitPrice:         rangeValues[l][OPTS.ITEM_COLUMNS.UNIT_PRICE.index - 1],
+          category:          rangeValues[l][OPTS.ITEM_COLUMNS.CATEGORY.index - 1],
           requestorComments: rangeValues[l][OPTS.ITEM_COLUMNS.REQUEST_COMMENTS.index - 1],
-          officerComments: rangeValues[l][OPTS.ITEM_COLUMNS.OFFICER_COMMENTS.index - 1],
+          officerComments:   rangeValues[l][OPTS.ITEM_COLUMNS.OFFICER_COMMENTS.index - 1],
+          supplier:          rangeValues[l][OPTS.ITEM_COLUMNS.SUPPLIER.index - 1],
+          productNum:        rangeValues[l][OPTS.ITEM_COLUMNS.PRODUCT_NUM.index - 1],
+          link:              rangeValues[l][OPTS.ITEM_COLUMNS.LINK.index - 1]
         });
-
       }
     }
 
@@ -1334,9 +1397,13 @@ function sendSlackMessage(messageData, webhook) {
  * @param {string} itemsMarked.name
  * @param {string} itemsMarked.quantity
  * @param {number} itemsMarked.totalPrice
+ * @param {number} itemsMarked.unitPrice
  * @param {string} itemsMarked.category
  * @param {string} itemsMarked.requestorComments
  * @param {string} itemsMarked.officerComments
+ * @param {string} itemsMarked.supplier
+ * @param {string} itemsMarked.productNum
+ * @param {string} itemsMarked.link
  * @param {string} projectName Name of the relevant projec.
  * @param {string} projectSheetUrl Link to the relevant project's sheet in the
  * databse.
@@ -1378,10 +1445,16 @@ function slackNotifyItems(
         callback_id: "itemNotification",
         fallback: "<" + projectSheetUrl + "|View Items>",
         actions: [
-          buildItemListSlackAttachment(itemsMarked),
+          buildItemListSlackAttachment(
+              itemsMarked, 
+              projectName, 
+              projectSheetUrl, 
+              userFullName, 
+              statusData.text,
+              projectColor),
           {
             type: "button",
-            text: "↗ Open Sheet",
+            text: "Open Sheet ↗",
             url: projectSheetUrl
           }
         ],
@@ -1400,23 +1473,29 @@ function slackNotifyItems(
  * @param {string} items.name
  * @param {string} items.quantity
  * @param {number} items.totalPrice
+ * @param {number} items.unitPrice
  * @param {string} items.category
  * @param {string} items.requestorComments
  * @param {string} items.officerComments
+ * @param {string} items.supplier
+ * @param {string} items.productNum
+ * @param {string} items.link
+ * @param {string} projectName
+ * @param {string} projectSheetUrl
+ * @param {string} user
+ * @param {string} action
+ * @param {string} projectColor
  */
-function buildItemListSlackAttachment(items) {
+function buildItemListSlackAttachment(items, projectName, projectSheetUrl, user, action, projectColor) {
   var attachment = {
     type: "button",
     text: "List Items",
     name: OPTS.SLACK.ITEM_LIST_ACTION_NAME,
-    /**
-     * This will be parsed and sent as a monospace message when the button is
-     * clicked. {NL} will be replaced by newlines (\n) and {TAB} by tabs (\t).
-     */
-    value: "Item Name                           | Qty | Total  | Category{NL}"
+    /** JSON to parse as return message later */
+    value: ''
   };
 
-  var sep = "   ";
+  /*var sep = "   ";
 
   items.forEach(function(currentItem) {
     var currentItemString =
@@ -1429,7 +1508,65 @@ function buildItemListSlackAttachment(items) {
     attachment.value += currentItemString;
   });
 
-  attachment.value = truncateString(attachment.value, 2000);
+  attachment.value = truncateString(attachment.value, 2000);*/
+
+  var itemListMessage = {
+    response_type: "ephemeral",
+    replace_original: false,
+    text: "Here are all the items that were affected by that action:",
+    attachments: [],
+    parse: "full",
+    mrkdwn: true
+  };
+
+  var itemsByCategory = {};
+  items.forEach(function(item) {
+    if(!itemsByCategory[item.category]) itemsByCategory[item.category] = [];
+    itemsByCategory[item.category].push(item);
+  });
+
+  Object.getOwnPropertyNames(itemsByCategory).forEach(function(category) {
+    var categoryAttachment = {
+      author_name: user + " - " + action,
+      title: category,
+      title_link: projectSheetUrl,
+      color: projectColor,
+      fields: itemsByCategory[category].map(function(item) {
+        var itemField = {
+          title: truncateString(item.name, 45),
+          value: "$" + item.totalPrice.toFixed(2) + "\n\t (" + item.quantity + "x @ $" + item.unitPrice.toFixed(2) + "/e)",
+          short: "true"
+        };
+
+        if(item.supplier || item.productNum) itemField.value += "\n\t";
+        // Links seem to be broken :(
+        //if(item.link && (item.supplier || item.productNum)) itemField.value += "<" + item.link + "|";
+        if(item.productNum) itemField.value += "`#" + item.productNum + "`";
+        if(item.supplier) itemField.value += " from " + item.supplier;
+        //if(item.link && (item.supplier || item.productNum)) itemField.value += ">";
+
+        if(item.requestorComments) itemField.value += "\n Requestor Comment: \n> _" + item.requestorComments + "_";
+        if(item.officerComments) itemField.value += "\n Officer Comment: \n> _" + item.officerComments + "_";
+
+        return itemField;
+      }),
+      footer: projectName,
+      footer_icon: OPTS.SLACK.SOAR_ICON,
+      mrkdwn_in: ["fields"]
+    };
+
+    itemListMessage.attachments.push(categoryAttachment);
+  });
+
+  // Safely encode JSON https://stackoverflow.com/a/4253415
+  attachment.value = JSON.stringify(itemListMessage).replace(/\\n/g, "\\n")
+  .replace(/\\'/g, "\\'")
+  .replace(/\\"/g, '\\"')
+  .replace(/\\&/g, "\\&")
+  .replace(/\\r/g, "\\r")
+  .replace(/\\t/g, "\\t")
+  .replace(/\\b/g, "\\b")
+  .replace(/\\f/g, "\\f");
 
   return attachment;
 }
@@ -1547,6 +1684,11 @@ function fastForwardSelectedAwaitingInfo() {
 /** Fast-forward selected items in the sheet to denied. */
 function fastForwardSelectedDenied() {
   fastForwardItems(STATUSES_DATA.DENIED);
+}
+
+/** Test post a message in the DEV channel. */
+function testUpdateItem() {
+  markItems(TEST_STATUS);
 }
 
 /** Reinstate / update all the protected ranges. */
