@@ -138,7 +138,7 @@ var OPTS = {
  * @prop {Object} actionText Menu item text.
  * @prop {?string} actionText.selected Menu item text for marking just selected.
  * @prop {?string} actionText.all Menu item text for marking all possible.
- * @prop {?string} actionText.fastForward Menu item text for fast-forwarding items. 
+ * @prop {?string} actionText.fastForward Menu item text for fast-forwarding items.
  * @prop {Object} slack Data for sending Slack notifications.
  * @prop {string[]} slack.messageTemplates Templates for sending Slack messages.
  * Will send a Slack message per string. Will replace {emoji} with the emoji,
@@ -374,7 +374,7 @@ var STATUSES_DATA = {
         OPTS.ITEM_COLUMNS.REQUEST_EMAIL
       ],
       date: [
-        OPTS.ITEM_COLUMNS.REQUEST_DATE      
+        OPTS.ITEM_COLUMNS.REQUEST_DATE
       ],
     },
     requiredColumns: [
@@ -406,7 +406,7 @@ var STATUSES_DATA = {
         OPTS.ITEM_COLUMNS.REQUEST_EMAIL
       ],
       date: [
-        OPTS.ITEM_COLUMNS.REQUEST_DATE       
+        OPTS.ITEM_COLUMNS.REQUEST_DATE
       ],
     },
     requiredColumns: [
@@ -480,8 +480,8 @@ function doPost(e) {
           text: parsedText,
         };
       } else {
-        console.log("so far so good...")
-        message = JSON.parse(payload.actions[0].value)
+        console.log("so far so good...");
+        message = JSON.parse(payload.actions[0].value);
         console.log(message);
       }
     }
@@ -886,7 +886,7 @@ function makeListFromArray(listArray, conjunction, noOxfordComma) {
  * Truncates the string if it's longer than `chars` and adds "..." to the end.
  * @param {string} longString The string to shorten.
  * @param {number} chars The maximum number of characters in the final string.
- * @param {boolean} pad If true, will add padding to end of string to make it 
+ * @param {boolean} pad If true, will add padding to end of string to make it
  * the target length.
  * @param {boolean} padOnly If true, won't truncate ever, will just pad.
  * @returns {string} The truncated string.
@@ -1446,10 +1446,10 @@ function slackNotifyItems(
         fallback: "<" + projectSheetUrl + "|View Items>",
         actions: [
           buildItemListSlackAttachment(
-              itemsMarked, 
-              projectName, 
-              projectSheetUrl, 
-              userFullName, 
+              itemsMarked,
+              projectName,
+              projectSheetUrl,
+              userFullName,
               statusData.text,
               projectColor),
           {
@@ -1467,7 +1467,7 @@ function slackNotifyItems(
 }
 
 /**
- * Build a Slack button attachment that sends a request to show the full item 
+ * Build a Slack button attachment that sends a request to show the full item
  * list on click.
  * @param {Object[]} items Data about all items to list.
  * @param {string} items.name
