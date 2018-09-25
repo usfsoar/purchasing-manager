@@ -1559,14 +1559,7 @@ function buildItemListSlackAttachment(items, projectName, projectSheetUrl, user,
   });
 
   // Safely encode JSON https://stackoverflow.com/a/4253415
-  attachment.value = JSON.stringify(itemListMessage).replace(/\\n/g, "\\n")
-  .replace(/\\'/g, "\\'")
-  .replace(/\\"/g, '\\"')
-  .replace(/\\&/g, "\\&")
-  .replace(/\\r/g, "\\r")
-  .replace(/\\t/g, "\\t")
-  .replace(/\\b/g, "\\b")
-  .replace(/\\f/g, "\\f");
+  attachment.value = JSON.stringify(itemListMessage);
 
   return attachment;
 }
