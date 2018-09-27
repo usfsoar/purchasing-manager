@@ -125,6 +125,7 @@ var OPTS = {
     STATUS_SLASH_COMMAND: 'budgetstatus',
     ITEM_LIST_ACTION_NAME_LEGACY: 'listItems',
     ITEM_LIST_ACTION_NAME: 'showItemList',
+    ITEM_LIST_ACTION_NAME_ROWNUMS: 'showItemsListFromRowNums',
     SOAR_ICON: 'http://www.usfsoar.com/wp-content/uploads/2018/09/595bae9a-c1f9-4b46-880e-dc6d4e1d0dac.png'
   },
   /** Number of adjacent officer columns in the project sheets. */
@@ -449,7 +450,7 @@ var TEST_STATUS = {
   officersOnly: true,
 };
 
-// Handle post request from Slack
+/** Handle post request from Slack */
 function doPost(e) {
   var message = {
     response_type: "ephemeral",
@@ -479,10 +480,15 @@ function doPost(e) {
           replace_original: false,
           text: parsedText,
         };
-      } else {
+      } else if(payload.actions[0].name === OPTS.SLACK.ITEM_LIST_ACTION_NAME) {
         console.log("so far so good...");
         message = JSON.parse(payload.actions[0].value);
         console.log(message);
+      } else if(payload.actions[0].name === OPTS.SLACK.ITEM_LIST_ACTION_NAME_ROWNUMS) {
+        setTimeout(function() {
+          itemsData = JSON.parse(payload.actions[0].value);
+          // TODO: Handle fetching the items data without timing out (3s max response time). Easier said than done?
+        });
       }
     }
   }
@@ -1013,7 +1019,8 @@ function markItems(newStatus, markAll) {
   var currentDate = new Date();
 
   var currentSheet = SpreadsheetApp.getActiveSheet();
-  var projectName = getProjectNameFromSheetName(currentSheet.getSheetName());
+  var projectSheetName = currentSheet.getSheetName();
+  var projectName = getProjectNameFromSheetName(projectSheetName);
   var projectSheetUrl = SpreadsheetApp.getActiveSpreadsheet().getUrl()
       + '#gid=' + currentSheet.getSheetId();
   var itemRequestors = /** @type {string[]} */ ([]);
@@ -1077,8 +1084,8 @@ function markItems(newStatus, markAll) {
       requestorColumnValues = getColumnRange(OPTS.ITEM_COLUMNS.REQUEST_EMAIL.index).getValues();
     }
 
-    /* List of items, for sending to Slack */
-    var items = [];
+    /* List of items' row numbers, for sending to Slack to return to us later */
+    var itemRowNumbers = [];
 
     // Loop through the ranges
     for(var k = 0; k < selectedRanges.length; k++) {
@@ -1128,18 +1135,7 @@ function markItems(newStatus, markAll) {
           pushIfNewAndTruthy(itemRequestors, requestorColumnValues[currentValuesRowIndex][0].toString());
         }
 
-        items.push({
-          name:              rangeValues[l][OPTS.ITEM_COLUMNS.NAME.index - 1],
-          quantity:          rangeValues[l][OPTS.ITEM_COLUMNS.QUANTITY.index - 1],
-          totalPrice:        rangeValues[l][OPTS.ITEM_COLUMNS.TOTAL_PRICE.index - 1],
-          unitPrice:         rangeValues[l][OPTS.ITEM_COLUMNS.UNIT_PRICE.index - 1],
-          category:          rangeValues[l][OPTS.ITEM_COLUMNS.CATEGORY.index - 1],
-          requestorComments: rangeValues[l][OPTS.ITEM_COLUMNS.REQUEST_COMMENTS.index - 1],
-          officerComments:   rangeValues[l][OPTS.ITEM_COLUMNS.OFFICER_COMMENTS.index - 1],
-          supplier:          rangeValues[l][OPTS.ITEM_COLUMNS.SUPPLIER.index - 1],
-          productNum:        rangeValues[l][OPTS.ITEM_COLUMNS.PRODUCT_NUM.index - 1],
-          link:              rangeValues[l][OPTS.ITEM_COLUMNS.LINK.index - 1]
-        });
+        itemRowNumbers.push(currentSheetRowIndex + 1);
       }
     }
 
@@ -1169,8 +1165,9 @@ function markItems(newStatus, markAll) {
         newStatus,
         currentUserFullName,
         itemRequestors,
-        items,
+        itemRowNumbers,
         projectName,
+        projectSheetName,
         projectSheetUrl,
         projectColor
       );
@@ -1393,18 +1390,9 @@ function sendSlackMessage(messageData, webhook) {
  * @param {string} userFullName Full Name of the current user.
  * @param {string[]} requestors Emails of people who requested the items
  * affected by this action.
- * @param {Object[]} itemsMarked Data about all items affected by this action.
- * @param {string} itemsMarked.name
- * @param {string} itemsMarked.quantity
- * @param {number} itemsMarked.totalPrice
- * @param {number} itemsMarked.unitPrice
- * @param {string} itemsMarked.category
- * @param {string} itemsMarked.requestorComments
- * @param {string} itemsMarked.officerComments
- * @param {string} itemsMarked.supplier
- * @param {string} itemsMarked.productNum
- * @param {string} itemsMarked.link
- * @param {string} projectName Name of the relevant projec.
+ * @param {number[]} itemsMarkedRows Row numbers (not indexes) of the marked items.
+ * @param {string} projectName Name of the relevant project.
+ * @param {string} projectSheetName Name of the project's sheet.
  * @param {string} projectSheetUrl Link to the relevant project's sheet in the
  * databse.
  * @param {string} projectColor Tab color of the project's sheet.
@@ -1413,13 +1401,14 @@ function slackNotifyItems(
   statusData,
   userFullName,
   requestors,
-  itemsMarked,
+  itemsMarkedRows,
   projectName,
+  projectSheetName,
   projectSheetUrl,
   projectColor) {
   statusData.slack.channelWebhooks.forEach(function(webhook, index) {
     var messages = [];
-    Logger.log(itemsMarked);
+
     if(index === 0) {
       messages = buildSlackMessages(
           statusData,
@@ -1444,14 +1433,15 @@ function slackNotifyItems(
       {
         callback_id: "itemNotification",
         fallback: "<" + projectSheetUrl + "|View Items>",
-        actions: [
-          buildItemListSlackAttachment(
-              itemsMarked,
-              projectName,
-              projectSheetUrl,
-              userFullName,
-              statusData.text,
-              projectColor),
+        actions: [{
+          type: 'button',
+          text: 'List Items',
+          value: JSON.stringify({
+            projectSheet: projectSheetName,
+            items: itemsMarkedRows
+          }),
+          name: OPTS.SLACK.ITEM_LIST_ACTION_NAME_ROWNUMS
+        },
           {
             type: "button",
             text: "Open Sheet ↗",
@@ -1467,49 +1457,13 @@ function slackNotifyItems(
 }
 
 /**
- * Build a Slack button attachment that sends a request to show the full item
- * list on click.
- * @param {Object[]} items Data about all items to list.
- * @param {string} items.name
- * @param {string} items.quantity
- * @param {number} items.totalPrice
- * @param {number} items.unitPrice
- * @param {string} items.category
- * @param {string} items.requestorComments
- * @param {string} items.officerComments
- * @param {string} items.supplier
- * @param {string} items.productNum
- * @param {string} items.link
- * @param {string} projectName
- * @param {string} projectSheetUrl
- * @param {string} user
- * @param {string} action
- * @param {string} projectColor
+ * Send a Slack message that replies to parentMessage with an ephemeral list of
+ * items.
+ * @param {string} projectSheetName Name of the project sheet for the items.
+ * @param {number[]} itemRowNumbers Row numbers of the items in that sheet.
+ * @param {string} parentMessageTs ts of the parent message.
  */
-function buildItemListSlackAttachment(items, projectName, projectSheetUrl, user, action, projectColor) {
-  var attachment = {
-    type: "button",
-    text: "List Items",
-    name: OPTS.SLACK.ITEM_LIST_ACTION_NAME,
-    /** JSON to parse as return message later */
-    value: ''
-  };
-
-  /*var sep = "   ";
-
-  items.forEach(function(currentItem) {
-    var currentItemString =
-        truncateString(currentItem.name, 35, true) + sep +
-        truncateString(currentItem.quantity, 3, true, true) + sep +
-        truncateString("$" + currentItem.totalPrice.toFixed(2), 5, true, true) + sep +
-        currentItem.category + "{NL}";
-    if(currentItem.requestorComments) currentItemString += "{TAB}Note: \"" + currentItem.requestorComments + "\"{NL}";
-    if(currentItem.officerComments) currentItemString += "{TAB}Officer Note: \"" + currentItem.officerComments + "\"{NL}";
-    attachment.value += currentItemString;
-  });
-
-  attachment.value = truncateString(attachment.value, 2000);*/
-
+function buildItemListMessage(projectSheetName, itemRowNumbers) {
   var itemListMessage = {
     response_type: "ephemeral",
     replace_original: false,
@@ -1519,11 +1473,7 @@ function buildItemListSlackAttachment(items, projectName, projectSheetUrl, user,
     mrkdwn: true
   };
 
-  var itemsByCategory = {};
-  items.forEach(function(item) {
-    if(!itemsByCategory[item.category]) itemsByCategory[item.category] = [];
-    itemsByCategory[item.category].push(item);
-  });
+  var itemsByCategory = getItemDataByCategoryFromRowNumbers(projectSheetName, itemRowNumbers);
 
   Object.getOwnPropertyNames(itemsByCategory).forEach(function(category) {
     var categoryAttachment = {
@@ -1558,10 +1508,41 @@ function buildItemListSlackAttachment(items, projectName, projectSheetUrl, user,
     itemListMessage.attachments.push(categoryAttachment);
   });
 
-  // Safely encode JSON https://stackoverflow.com/a/4253415
-  attachment.value = JSON.stringify(itemListMessage);
+  return itemListMessage;
+}
 
-  return attachment;
+/**
+ * Get all relevant data for the items referred to and return them by category.
+ * @param {string} projectSheetName Name of the sheet where the items are located.
+ * @param {number[]} itemRowNumbers Row numbers of the items.
+ * @returns {Object<string,Object>} A dictionary mapping item categories to items.
+ */
+function getItemDataByCategoryFromRowNumbers(projectSheetName, itemRowNumbers) {
+  var projectSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(projectSheetName);
+  var allItems = projectSheet.getDataRange().getValues();
+  var categories = {};
+
+  itemRowNumbers.forEach(function(rowNumber) {
+    var item = allItems[rowNumber - 1];
+
+    var itemCategory = item[OPTS.ITEM_COLUMNS.CATEGORY];
+    if(!categories[itemCategory]) categories[itemCategory] = [];
+
+    categories[itemCategory].push({
+      name: item[OPTS.ITEM_COLUMNS.NAME],
+      quantity: item[OPTS.ITEM_COLUMNS.QUANTITY],
+      totalPrice: item[OPTS.ITEM_COLUMNS.TOTAL_PRICE],
+      unitPrice: item[OPTS.ITEM_COLUMNS.UNIT_PRICE],
+      category: item[OPTS.ITEM_COLUMNS.CATEGORY],
+      requestorComments: item[OPTS.ITEM_COLUMNS.REQUEST_COMMENTS],
+      officerComments: item[OPTS.ITEM_COLUMNS.OFFICER_COMMENTS],
+      supplier: item[OPTS.ITEM_COLUMNS.SUPPLIER],
+      productNum: item[OPTS.ITEM_COLUMNS.PRODUCT_NUM],
+      link: item[OPTS.ITEM_COLUMNS.LINK]
+    });
+  });
+
+  return categories;
 }
 
 /**
