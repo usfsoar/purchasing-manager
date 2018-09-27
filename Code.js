@@ -1558,8 +1558,13 @@ function buildItemListSlackAttachment(items, projectName, projectSheetUrl, user,
     itemListMessage.attachments.push(categoryAttachment);
   });
 
-  // Safely encode JSON https://stackoverflow.com/a/4253415
   attachment.value = JSON.stringify(itemListMessage);
+
+  if(attachment.value.length >= 2000) {
+    itemListMessage.text = "Sorry, there were too many items to list. Open the project sheet to view them instead. https://github.com/usfsoar/purchasing-manager/issues/6";
+    itemListMessage.attachments = [];
+    attachment.value = JSON.stringify(itemListMessage);
+  }
 
   return attachment;
 }
