@@ -211,7 +211,6 @@ var STATUSES_DATA = {
     requiredColumns: [
       OPTS.ITEM_COLUMNS.NAME,
       OPTS.ITEM_COLUMNS.SUPPLIER,
-      OPTS.ITEM_COLUMNS.LINK,
       OPTS.ITEM_COLUMNS.UNIT_PRICE,
       OPTS.ITEM_COLUMNS.QUANTITY,
     ],
@@ -319,7 +318,7 @@ var STATUSES_DATA = {
   },
   RECEIVED: {
     text: 'Received',
-    allowedPrevious: ['Awaiting Pickup'],
+    allowedPrevious: ['Awaiting Pickup', 'Submitted', 'Ordered'],
     actionText: {
       fastForward: 'Received',
       selected: 'Mark selected items as received (picked up)',
