@@ -255,13 +255,13 @@ var STATUSES_DATA = {
     allowedPrevious: ['Submitted'],
     actionText: {
       fastForward: 'Ordered',
-      selected: 'Mark selected items as ordered by SBS',
+      selected: 'Mark selected items as ordered',
     },
     slack: {
       emoji: ':white_circle:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *ordered* by Student Government.'
+        '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *ordered*.'
       ],
       channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
@@ -294,7 +294,7 @@ var STATUSES_DATA = {
       targetUsers: OPTS.SLACK.TARGET_USERS.CHANNEL,
       messageTemplates: [
         '{userTags} React with ' + OPTS.SLACK.KYBER_TASK_REACTION + ' to the following message if you\'re going to pickup these items:',
-        '{emoji} {userFullName} marked {numMarked} item{plural} for {projectName} as awaiting pickup from Student Business Services in MSC4300.'
+        '{emoji} {userFullName} marked {numMarked} item{plural} for {projectName} as awaiting pickup (usually from Student Business Services in MSC4300).'
       ],
       channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.RECIEVING],
     },
@@ -854,7 +854,7 @@ function getSlackTagByEmail(email) {
   return slackId ? '<@' + getSlackIdByEmail(email) + '>' : '';
 }
 
-/**
+/** 
  * Turn an array into a human-readable list.
  * @param {string[]} listArray Array to make a list from.
  * @param {string} [conjunction='and'] Conjunction to use at the end of the list.
