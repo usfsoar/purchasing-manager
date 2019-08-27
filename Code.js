@@ -91,7 +91,9 @@ var OPTS = {
   },
   /** Names of sheets in the Spreadsheet */
   SHEET_NAMES: {
-    USERS: "Users"
+    USERS: "Users",
+    PURCHASING_TEMPLATE: "Purchasing Sheet Template",
+    MAIN_DASHBOARD: "Main Dashboard"
   },
   DASHBOARD_CELLS: {
     TOTAL_BUDGET: {
@@ -101,6 +103,10 @@ var OPTS = {
     TOTAL_EXPENSES: {
       row: 4,
       column: 4
+    },
+    PURCHASES_FOLDER: {
+      row: 59,
+      column: 5
     }
   },
   /** Slack API pieces */
@@ -691,7 +697,9 @@ function buildAndAddCustomMenu() {
       .addItem(STATUSES_DATA.AWAITING_PICKUP.actionText.selected, markSelectedAwaitingPickup.name)
       .addSeparator()
       .addItem(STATUSES_DATA.AWAITING_INFO.actionText.selected, markSelectedAwaitingInfo.name)
-      .addItem(STATUSES_DATA.DENIED.actionText.selected, markSelectedDenied.name);
+      .addItem(STATUSES_DATA.DENIED.actionText.selected, markSelectedDenied.name)
+      .addSeparator()
+      .addItem("Send to new purchasing sheet", sendSelectedToSheet.name);
 
     fastFowardMenu = SpreadsheetApp.getUi()
       .createMenu(OPTS.FAST_FORWARD_MENU.NAME)
@@ -758,7 +766,7 @@ function successNotification(message) {
 /**
  * Returns the current user's information from the storage sheet, or (prompt)s for it,
  * or returns it from the local cache if it's been asked before.
- * @returns {{slackId:string,fullName:string,email:string,isFinancialOfficer:boolean}}
+ * @returns {{slackId:string,fullName:string,email:string,isFinancialOfficer:boolean,phone?:string}}
  * Information about the user.
  */
 var getCurrentUserInfo = (function() {
@@ -768,6 +776,7 @@ var getCurrentUserInfo = (function() {
     fullName: /** @type {?string} */  (null),
     isFinancialOfficer: verifyFinancialOfficer(currentEmail),
     email: currentEmail,
+    phone: /** @type {?string} */ (null)
   };
 
   return function() {
@@ -782,6 +791,7 @@ var getCurrentUserInfo = (function() {
         if(userData[i][0] === cache.email) {
           cache.slackId = userData[i][1];
           cache.fullName = userData[i][2];
+          cache.phone = userData[i][3] || null;
           userDataFound = true;
           break;
         }
@@ -1748,4 +1758,115 @@ function protectRanges() {
   statusesProtection.setDescription(adminProtectDescription);
   statusesProtection.removeEditors(statusesProtection.getEditors());
   statusesProtection.addEditor(admin);
+}
+
+/**
+ * Show option to open the folder or the file.
+ * @param {GoogleAppsScript.Drive.File} spreadsheet
+ * @param {GoogleAppsScript.Drive.Folder} folder
+ */
+function openFile(spreadsheet, folder) {
+  var spreadsheetId = spreadsheet.getId();
+  var folderId = folder.getId();
+  var fileUrl = "https://docs.google.com/spreadsheets/d/"+spreadsheetId;
+  var folderUrl = "https://drive.google.com/drive/u/2/folders/"+folderId;
+  var html = "Succesfully sent items to sheet.<br><a target='_blank' href='" + folderUrl + "'>Open Purchasing Sheets Folder</a><br><a target='_blank' href='" + fileUrl + "'>Open The New Purchasing Sheet</a>";
+  var userInterface = HtmlService.createHtmlOutput(html);
+   SpreadsheetApp.getUi().showModalDialog(userInterface, "Open Sheet");
+}
+
+/** Send the selected items to a new purchasing sheet. */
+function sendSelectedToSheet() {
+  if(!checkIfProjectSheet() || !verifyFinancialOfficer()) return;
+  var selectedRanges = getSelectedRows();
+
+  var totalRowCount = selectedRanges.reduce(function(total, currentRange) {
+    return total + currentRange;
+  }, 0);
+  if(totalRowCount > 12 || totalRowCount < 1) {
+    errorNotification("Can only send 1-12 rows at a time to a purchasing sheet.");
+    return;
+  }
+
+  var currentSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+
+  var purchasesFolderId = currentSpreadsheet
+    .getSheetByName(OPTS.SHEET_NAMES.MAIN_DASHBOARD)
+    .getRange(
+      OPTS.DASHBOARD_CELLS.PURCHASES_FOLDER.row, 
+      OPTS.DASHBOARD_CELLS.PURCHASES_FOLDER.column
+    )
+    .getValue();
+  var targetFolder = DriveApp.getFolderById(purchasesFolderId);
+
+  var currentSheet = currentSpreadsheet.getActiveSheet();
+  var template = currentSpreadsheet.getSheetByName(OPTS.SHEET_NAMES.PURCHASING_TEMPLATE);
+  var newSheet = template.copyTo(currentSpreadsheet);
+
+  var projectName = getProjectNameFromSheetName(currentSheet.getSheetName());
+  
+  var officer = getCurrentUserInfo();
+  newSheet.getRange("I6").setValue(officer.fullName);
+  newSheet.getRange("I7").setValue(officer.email);
+  newSheet.getRange("I8").setValue(officer.phone);
+
+  newSheet.getRange("F14").setValue(projectName);
+
+  var needBy = moment().add(2, "weeks").format("MM/DD/YY");
+  newSheet.getRange("M38").setValue(needBy);
+
+  var vendor = selectedRanges[0].getValues()[0][OPTS.ITEM_COLUMNS.SUPPLIER.index - 1];
+  newSheet.getRange("J42").setValue(vendor);
+
+  var allHaveSameVendor = true;
+  var allNew = true;
+  var index = 50;
+  selectedRanges.forEach(function(range) {
+    range.getValues().forEach(function(row) {
+      if(row[OPTS.ITEM_COLUMNS.SUPPLIER.index - 1] !== vendor) {
+        allHaveSameVendor = false;
+      }
+      if(row[OPTS.ITEM_COLUMNS.STATUS.index - 1] !== STATUSES_DATA.NEW.text) {
+        allNew = false;
+      }
+      var itemName = row[OPTS.ITEM_COLUMNS.NAME.index - 1];
+      newSheet.getRange(index, 2).setValue(itemName);
+      var link = row[OPTS.ITEM_COLUMNS.LINK.index - 1];
+      newSheet.getRange(index, 8).setValue(link);
+      var qty = row[OPTS.ITEM_COLUMNS.QUANTITY.index - 1];
+      newSheet.getRange(index, 13).setValue(qty);
+      var unitPrice = row[OPTS.ITEM_COLUMNS.UNIT_PRICE.index - 1];
+      newSheet.getRange(index, 15).setValue(unitPrice);
+      index++;
+    });
+  });
+
+  if(!allNew) {
+    errorNotification("One or more items was not 'New'!")
+    currentSpreadsheet.deleteSheet(newSheet);
+    return;
+  }
+
+  if(!allHaveSameVendor) {
+    errorNotification("The items selected do not all have the same vendor!");
+    currentSpreadsheet.deleteSheet(newSheet);
+    return;
+  }
+
+  var sheetName = moment().format("YY-MM-DD") + " - " + projectName + " - " + vendor;
+  newSheet.setName(sheetName);
+
+  var newSpreadsheet = SpreadsheetApp.create(sheetName);
+  var file = DriveApp.getFileById(newSpreadsheet.getId());
+  var parents = file.getParents();
+  while(parents.hasNext()) {
+    parents.next().removeFile(file);
+  }
+  targetFolder.addFile(file);
+
+  file.setName(sheetName);
+  newSheet.copyTo(newSpreadsheet);
+  newSpreadsheet.deleteSheet(newSpreadsheet.getSheetByName("Sheet1"));
+  currentSpreadsheet.deleteSheet(newSheet);
+  openFile(file, targetFolder);
 }
