@@ -1711,10 +1711,10 @@ function protectRanges() {
   var adminProtectDescription = 'This part of the sheet can only be edited by the admin.';
   var officerProtectDescription = 'This part of the sheet can only be edited by Financial Officers.';
 
-  SpreadsheetApp.getActiveSpreadsheet().getProtections(SpreadsheetApp.ProtectionType.RANGE)
+  /*SpreadsheetApp.getActiveSpreadsheet().getProtections(SpreadsheetApp.ProtectionType.RANGE)
       .forEach(function(protection) {
         protection.remove();
-      });
+      });*/
 
   SpreadsheetApp.getActiveSpreadsheet().getProtections(SpreadsheetApp.ProtectionType.SHEET)
       .forEach(function(protection) {
@@ -1725,8 +1725,10 @@ function protectRanges() {
     var sheetName = sheet.getName();
 
     if(projectSheetNames.indexOf(sheetName) !== -1) {
+      // The below code was taking too long so now we maintain range protections manually
+
       // Lock certain sections of project sheets (only the headers and formula-driven parts)
-      var numDataRows = sheet.getLastRow() - OPTS.NUM_HEADER_ROWS;
+      /*var numDataRows = sheet.getLastRow() - OPTS.NUM_HEADER_ROWS;
 
       var headerRangeProtection = sheet.getRange(1, 1, OPTS.NUM_HEADER_ROWS, sheet.getLastColumn()).protect();
       var calculatedPriceColumnProtection = sheet.getRange(1, OPTS.ITEM_COLUMNS.TOTAL_PRICE.index,numDataRows, 1).protect();
@@ -1742,8 +1744,7 @@ function protectRanges() {
 
       headerRangeProtection.addEditor(admin);
       calculatedPriceColumnProtection.addEditor(admin);
-      financialOfficerRangeProtection.addEditors(financialOfficers);
-
+      financialOfficerRangeProtection.addEditors(financialOfficers);*/
     } else if(sheetName !== userDataSheetName) {
       // Lock the entire sheet if not the user data sheet
       var sheetProtection = sheet.protect();
