@@ -111,7 +111,7 @@ var OPTS = {
   },
   /** Slack API pieces */
   SLACK: {
-    KYBER_TASK_REACTION: ':ballot_box_with_check:',
+    CHECK_MARK_EMOJI: ':heavy_check_mark:',
     /**
      * Possible cases for target users to tag in messages.
      * @enum {string}
@@ -201,8 +201,7 @@ var STATUSES_DATA = {
       emoji: ':large_blue_circle:',
       targetUsers: OPTS.SLACK.TARGET_USERS.OFFICERS,
       messageTemplates: [
-        '{userTags} React with ' + OPTS.SLACK.KYBER_TASK_REACTION + ' to the following message if you\'re going to review / submit these items:',
-        '{emoji} {userFullName} has submitted {numMarked} new item{plural} to be purchased for {projectName}.'
+        '{emoji} {userTags} {userFullName} has submitted {numMarked} new item{plural} to be purchased for {projectName}.'
       ],
       channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
@@ -219,6 +218,7 @@ var STATUSES_DATA = {
       OPTS.ITEM_COLUMNS.SUPPLIER,
       OPTS.ITEM_COLUMNS.UNIT_PRICE,
       OPTS.ITEM_COLUMNS.QUANTITY,
+      OPTS.ITEM_COLUMNS.CATEGORY
     ],
     officersOnly: false,
   },
@@ -252,6 +252,7 @@ var STATUSES_DATA = {
     reccomendedColumns: [
       OPTS.ITEM_COLUMNS.ACCOUNT,
       OPTS.ITEM_COLUMNS.CATEGORY,
+      OPTS.ITEM_COLUMNS.REQUEST_ID
     ],
     fillInDefaults: true,
     officersOnly: true,
@@ -299,10 +300,9 @@ var STATUSES_DATA = {
       emoji: ':large_blue_circle:',
       targetUsers: OPTS.SLACK.TARGET_USERS.CHANNEL,
       messageTemplates: [
-        '{userTags} React with ' + OPTS.SLACK.KYBER_TASK_REACTION + ' to the following message if you\'re going to pickup these items:',
-        '{emoji} {userFullName} marked {numMarked} item{plural} for {projectName} as awaiting pickup (usually from Student Business Services in MSC4300).'
+        '{emoji} {userFullName} marked {numMarked} item{plural} for {projectName} as awaiting pickup (usually in MSC 4300). _React with ' + OPTS.SLACK.CHECK_MARK_EMOJI + ' if you\'re going to pick them up._'
       ],
-      channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.RECIEVING],
+      channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       user: null,
@@ -335,7 +335,7 @@ var STATUSES_DATA = {
       messageTemplates: [
         '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as received (picked up).'
       ],
-      channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING, SECRET_OPTS.SLACK.WEBHOOKS.RECIEVING],
+      channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       user: OPTS.ITEM_COLUMNS.RECIEVE_EMAIL,
@@ -398,7 +398,7 @@ var STATUSES_DATA = {
       emoji: ':black_circle:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        '{emoji} {userTags} {userFullName} requested more info for {numMarked} item{plural} for {projectName} (_see comments in database_).'
+        '{emoji} {userTags} {userFullName} requested more info for {numMarked} item{plural} for {projectName} (_see comments in database_). Update the information, then resubmit as new items.'
       ],
       channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
@@ -1750,15 +1750,16 @@ function protectRanges() {
       var sheetProtection = sheet.protect();
       sheetProtection.removeEditors(sheetProtection.getEditors());
       sheetProtection.addEditors(financialOfficers);
+      successNotification("Updated protections for " + sheetName);
     }
   });
 
   // Protect the statuses, since they need to match the values in the script
-  var statusesProtection = SpreadsheetApp.getActiveSpreadsheet()
+  /*var statusesProtection = SpreadsheetApp.getActiveSpreadsheet()
       .getRangeByName(OPTS.NAMED_RANGES.STATUSES).protect();
   statusesProtection.setDescription(adminProtectDescription);
   statusesProtection.removeEditors(statusesProtection.getEditors());
-  statusesProtection.addEditor(admin);
+  statusesProtection.addEditor(admin);*/
 }
 
 /**
