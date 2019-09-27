@@ -1710,7 +1710,7 @@ function markSelectedReceived() {
 function markSelectedReceivedReimburse() {
   var ui = SpreadsheetApp.getUi();
   var response = ui.alert('Confirm',
-    'NOTE: Reimbursements are not guarunteed and MUST be preapproved. Items must be received before reimbursement will be sent. If at all possible, items should be purchased by a financial officer. Are you sure you want to continue?',
+    'NOTE: Reimbursements are not guarunteed and MUST be preapproved. Items must be received before reimbursement will be sent. If at all possible, items should be purchased by a financial officer. You are required to put your PayPal email address in the "Requestor Comments" field, and only the original item requestor can be reimbursed. Are you sure you want to continue?',
     ui.ButtonSet.OK_CANCEL);
   if (response === ui.Button.CANCEL)
     return;
