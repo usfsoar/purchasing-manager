@@ -5,10 +5,11 @@
   "main": "Code.gs",
   "dependencies": {},
   "devDependencies": {
-    "@types/google-apps-script": "0.0.27"
+    "@types/google-apps-script": "0.0.62"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "push": "clasp push",
+    "pull": "clasp pull"
   },
   "author": "Ian Sanders <iansanders@mail.usf.edu>",
   "license": "ISC"

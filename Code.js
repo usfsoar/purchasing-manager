@@ -68,8 +68,8 @@ var OPTS = {
     SUBMIT_DATE: {index: 18, name: 'Submit Date'},
     UPDATE_DATE: {index: 19, name: 'Update Date'},
     ARRIVE_DATE: {index: 20, name: 'Arrival Date'},
-    RECIEVE_EMAIL: {index: 21, name: 'Recieve Date'},
-    RECIEVE_DATE: {index: 22, name: 'Reciever Email'},
+    receive_EMAIL: {index: 21, name: 'receive Date'},
+    receive_DATE: {index: 22, name: 'receiver Email'},
   },
   /** Options relating to the user interface. */
   UI: {
@@ -338,8 +338,8 @@ var STATUSES_DATA = {
       channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
-      user: OPTS.ITEM_COLUMNS.RECIEVE_EMAIL,
-      date: OPTS.ITEM_COLUMNS.RECIEVE_DATE,
+      user: OPTS.ITEM_COLUMNS.receive_EMAIL,
+      date: OPTS.ITEM_COLUMNS.receive_DATE,
     },
     fastForwardColumns: {
       user: [
@@ -418,6 +418,74 @@ var STATUSES_DATA = {
       OPTS.ITEM_COLUMNS.OFFICER_COMMENTS
     ],
     officersOnly: true,
+  },
+  RECEIVED_REIMBURSE: {
+    text: 'Received - Awaiting Reimbursement',
+    allowedPrevious: ['New', 'Submitted', 'Ordered', 'received', 'Awaiting Pickup', 'Awaiting Info'],
+    actionText: {
+      fastForward: 'Received - Awaiting Reimbursement',
+      selected: 'Mark selected items received and request reimbursement'
+    },
+    slack: {
+      emoji: ':heavy_dollar_sign:',
+      targetUsers: OPTS.SLACK.TARGET_USERS.OFFICERS,
+      messageTemplates: [
+        '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} as received for {projectName} and requested reimbursement for them.'
+      ],
+      channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING],
+    },
+    columns: {
+      date: OPTS.ITEM_COLUMNS.receive_DATE,
+    },
+    requiredColumns: [
+      OPTS.ITEM_COLUMNS.REQUEST_COMMENTS
+    ],
+    officersOnly: false,
+    fastForwardColumns: {
+      user: [
+        OPTS.ITEM_COLUMNS.REQUEST_EMAIL,
+        OPTS.ITEM_COLUMNS.OFFICER_EMAIL,
+      ],
+      date: [
+        OPTS.ITEM_COLUMNS.REQUEST_DATE,
+        OPTS.ITEM_COLUMNS.SUBMIT_DATE,
+        OPTS.ITEM_COLUMNS.UPDATE_DATE,
+        OPTS.ITEM_COLUMNS.ARRIVE_DATE,
+      ],
+    },
+  },
+  REIMBURSED: {
+    text: 'Reimbursed',
+    allowedPrevious: ['Reimbursed'],
+    actionText: {
+      fastForward: 'Reimbursed',
+      selected: 'Mark selected items as reimbursed'
+    },
+    slack: {
+      emoji: ':heavy_dollar_sign:',
+      targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
+      messageTemplates: [
+        '{emoji} {userTags} {userFullName} sent reimbursement for {numMarked} item{plural}.'
+      ],
+      channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING],
+    },
+    columns: {
+      date: OPTS.ITEM_COLUMNS.UPDATE_DATE,
+    },
+    requiredColumns: [],
+    officersOnly: true,
+    fastForwardColumns: {
+      user: [
+        OPTS.ITEM_COLUMNS.REQUEST_EMAIL,
+        OPTS.ITEM_COLUMNS.OFFICER_EMAIL,
+      ],
+      date: [
+        OPTS.ITEM_COLUMNS.REQUEST_DATE,
+        OPTS.ITEM_COLUMNS.SUBMIT_DATE,
+        OPTS.ITEM_COLUMNS.UPDATE_DATE,
+        OPTS.ITEM_COLUMNS.ARRIVE_DATE,
+      ],
+    },
   }
 };
 
@@ -698,6 +766,7 @@ function buildAndAddCustomMenu() {
       .addSeparator()
       .addItem(STATUSES_DATA.AWAITING_INFO.actionText.selected, markSelectedAwaitingInfo.name)
       .addItem(STATUSES_DATA.DENIED.actionText.selected, markSelectedDenied.name)
+      .addItem(STATUSES_DATA.REIMBURSED.actionText.selected, markSelectedReimbursed.name)
       .addSeparator()
       .addItem("Send to new purchasing sheet", sendSelectedToSheet.name);
 
@@ -709,12 +778,16 @@ function buildAndAddCustomMenu() {
       .addItem(STATUSES_DATA.AWAITING_INFO.actionText.fastForward, fastForwardSelectedAwaitingInfo.name)
       .addItem(STATUSES_DATA.DENIED.actionText.fastForward, fastForwardSelectedDenied.name)
       .addItem(STATUSES_DATA.AWAITING_PICKUP.actionText.fastForward, fastForwardSelectedAwaitingPickup.name)
-      .addItem(STATUSES_DATA.RECEIVED.actionText.fastForward, fastForwardSelectedReceived.name);
+      .addItem(STATUSES_DATA.RECEIVED.actionText.fastForward, fastForwardSelectedReceived.name)
+      .addItem(STATUSES_DATA.RECEIVED_REIMBURSE.actionText.fastForward, fastForwardSelectedReceivedReimburse.name)
+      .addItem(STATUSES_DATA.REIMBURSED.actionText.fastForward, fastForwardSelectedReimbursed.name);
   }
 
   customMenu
       .addSeparator()
-      .addItem(STATUSES_DATA.RECEIVED.actionText.selected, markSelectedReceived.name);
+      .addItem(STATUSES_DATA.RECEIVED.actionText.selected, markSelectedReceived.name)
+      .addSeparator()
+      .addItem(STATUSES_DATA.RECEIVED_REIMBURSE.actionText.selected, markSelectedReceivedReimburse.name);
 
   if(verifyAdmin()) {
     customMenu
@@ -1628,9 +1701,25 @@ function markAllNew() {
   markItems(STATUSES_DATA.NEW, true);
 }
 
-/** Mark selected items in the sheet as recieved. */
+/** Mark selected items in the sheet as received. */
 function markSelectedReceived() {
   markItems(STATUSES_DATA.RECEIVED);
+}
+
+/** Mark selected items in the sheet as received and request reimbursement. */
+function markSelectedReceivedReimburse() {
+  var ui = SpreadsheetApp.getUi();
+  var response = ui.alert('Confirm',
+    'NOTE: Reimbursements are not guarunteed and MUST be preapproved. Items must be received before reimbursement will be sent. If at all possible, items should be purchased by a financial officer. Are you sure you want to continue?',
+    ui.ButtonSet.OK_CANCEL);
+  if (response === ui.Button.CANCEL)
+    return;
+  markItems(STATUSES_DATA.RECEIVED_REIMBURSE);
+}
+
+/** Mark selected items in the sheet as reimbursed. */
+function markSelectedReimbursed() {
+  markItems(STATUSES_DATA.REIMBURSED);
 }
 
 /** Mark selected items in the sheet as submitted. */
@@ -1663,9 +1752,19 @@ function fastForwardSelectedNew() {
   fastForwardItems(STATUSES_DATA.NEW);
 }
 
-/** Fast-forward selected items in the sheet to recieved. */
+/** Fast-forward selected items in the sheet to received. */
 function fastForwardSelectedReceived() {
   fastForwardItems(STATUSES_DATA.RECEIVED);
+}
+
+/** Fast-forward selected items in the sheet to received and request reimbursement. */
+function fastForwardSelectedReceivedReimburse() {
+  fastForwardItems(STATUSES_DATA.RECEIVED_REIMBURSE);
+}
+
+/** Fast-forward selected items in the sheet to reimbursed. */
+function fastForwardSelectedReimbursed() {
+  fastForwardItems(STATUSES_DATA.REIMBURSED);
 }
 
 /** Fast-forward selected items in the sheet to submitted. */
@@ -1774,7 +1873,7 @@ function openFile(spreadsheet, folder) {
   var folderUrl = "https://drive.google.com/drive/u/2/folders/"+folderId;
   var html = "Succesfully sent items to sheet.<br><a target='_blank' href='" + folderUrl + "'>Open Purchasing Sheets Folder</a><br><a target='_blank' href='" + fileUrl + "'>Open The New Purchasing Sheet</a>";
   var userInterface = HtmlService.createHtmlOutput(html);
-   SpreadsheetApp.getUi().showModalDialog(userInterface, "Open Sheet");
+  SpreadsheetApp.getUi().showModalDialog(userInterface, "Open Sheet");
 }
 
 /** Send the selected items to a new purchasing sheet. */
