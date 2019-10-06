@@ -105,7 +105,7 @@ var OPTS = {
       column: 4
     },
     PURCHASES_FOLDER: {
-      row: 60,
+      row: 61,
       column: 5
     }
   },
