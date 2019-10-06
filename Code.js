@@ -33,6 +33,8 @@ var OPTS = {
     PROJECT_SHEETS: 'ProjectSheets',
     PROJECT_NAMES_TO_SHEETS: 'ProjectNamesToSheets',
     STATUSES: 'Statuses',
+    /** Range containing the ID of the purchasing sheets folder. 1 cell. */
+    PURCHASING_SHEETS_FOLDER_ID: 'PurchasingSheetsFolderID'
   },
   /** Custom Menu info. */
   CUSTOM_MENU: {
@@ -104,9 +106,9 @@ var OPTS = {
       row: 4,
       column: 4
     },
-    PURCHASES_FOLDER: {
-      row: 61,
-      column: 5
+    PROJECT_DESCRIPTION: {
+      row: 11,
+      column: 3
     }
   },
   /** Slack API pieces */
@@ -1893,27 +1895,26 @@ function sendSelectedToSheet() {
 
   var currentSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
 
-  var purchasesFolderId = currentSpreadsheet
-    .getSheetByName(OPTS.SHEET_NAMES.MAIN_DASHBOARD)
-    .getRange(
-      OPTS.DASHBOARD_CELLS.PURCHASES_FOLDER.row, 
-      OPTS.DASHBOARD_CELLS.PURCHASES_FOLDER.column
-    )
-    .getValue();
+  var purchasesFolderId = getNamedRangeValues(OPTS.NAMED_RANGES.PURCHASING_SHEETS_FOLDER_ID)[0];
   var targetFolder = DriveApp.getFolderById(purchasesFolderId);
 
   var currentSheet = currentSpreadsheet.getActiveSheet();
   var template = currentSpreadsheet.getSheetByName(OPTS.SHEET_NAMES.PURCHASING_TEMPLATE);
   var newSheet = template.copyTo(currentSpreadsheet);
 
-  var projectName = getProjectNameFromSheetName(currentSheet.getSheetName());
-  
+  var projectSheetName = currentSheet.getSheetName();
+  var projectName = getProjectNameFromSheetName(projectSheetName);
+  var dashboardSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(projectSheetName + " Dashboard");
+  var projectDescription = dashboardSheet.getRange(
+      OPTS.DASHBOARD_CELLS.PROJECT_DESCRIPTION.row,
+      OPTS.DASHBOARD_CELLS.PROJECT_DESCRIPTION.column).getValue();  
   var officer = getCurrentUserInfo();
   newSheet.getRange("I6").setValue(officer.fullName);
   newSheet.getRange("I7").setValue(officer.email);
   newSheet.getRange("I8").setValue(officer.phone);
 
   newSheet.getRange("F14").setValue(projectName);
+  newSheet.getRange("A21").setValue(projectDescription);
 
   var needBy = moment().add(2, "weeks").format("MM/DD/YY");
   newSheet.getRange("M38").setValue(needBy);
