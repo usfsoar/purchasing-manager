@@ -1866,12 +1866,14 @@ function protectRanges() {
  * @param {GoogleAppsScript.Drive.File} spreadsheet
  * @param {GoogleAppsScript.Drive.Folder} folder
  */
-function openFile(spreadsheet, folder) {
+function openFile(spreadsheet, folder, vendorName) {
+  var vendor = vendorName || "VENDOR+NAME";
   var spreadsheetId = spreadsheet.getId();
   var folderId = folder.getId();
   var fileUrl = "https://docs.google.com/spreadsheets/d/"+spreadsheetId;
   var folderUrl = "https://drive.google.com/drive/u/2/folders/"+folderId;
-  var html = "Succesfully sent items to sheet.<br><a target='_blank' href='" + folderUrl + "'>Open Purchasing Sheets Folder</a><br><a target='_blank' href='" + fileUrl + "'>Open The New Purchasing Sheet</a>";
+  var currentUserEmail = getCurrentUserInfo().email;
+  var html = "Succesfully sent items to sheet.<br><a target='_blank' href='" + folderUrl + "'>Open Purchasing Sheets Folder</a><br><a target='_blank' href='" + fileUrl + "'>Open The New Purchasing Sheet</a><br /><br /><strong>Remember:</strong> Attach the form to an email sent from your @mail.usf.edu email adress to sg-rmdpurchase@usf.edu with subject \"SOCIETY OF AERONAUTICS AND ROCKETRY, VENDOR NAME, EVENT DATE (if applicable)\". Only one form per email! <br><br> <a  href='https://mail.google.com/mail/u/0/?view=cm&fs=1&to=sg-rmdpurchase@usf.edu&authuser="+currentUserEmail+"&su=SOCIETY+OF+AERONAUTICS+AND+ROCKETRY,+"+vendor+"&body=Please+see+attached+purchasing+form.&tf=1' target='_blank'><strong>Start Email in Gmail</strong></a>";
   var userInterface = HtmlService.createHtmlOutput(html);
   SpreadsheetApp.getUi().showModalDialog(userInterface, "Open Sheet");
 }
@@ -1969,5 +1971,5 @@ function sendSelectedToSheet() {
   newSheet.copyTo(newSpreadsheet);
   newSpreadsheet.deleteSheet(newSpreadsheet.getSheetByName("Sheet1"));
   currentSpreadsheet.deleteSheet(newSheet);
-  openFile(file, targetFolder);
+  openFile(file, targetFolder, encodeURIComponent(vendor.toUpperCase()));
 }
