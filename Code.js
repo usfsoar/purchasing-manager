@@ -200,7 +200,7 @@ var STATUSES_DATA = {
       all: 'Submit all new items',
     },
     slack: {
-      emoji: ':large_blue_circle:',
+      emoji: ':new:',
       targetUsers: OPTS.SLACK.TARGET_USERS.OFFICERS,
       messageTemplates: [
         '{emoji} {userTags} {userFullName} has submitted {numMarked} new item{plural} to be purchased for {projectName}.'
@@ -232,7 +232,7 @@ var STATUSES_DATA = {
       selected: 'Mark selected items as submitted',
     },
     slack: {
-      emoji: ':white_circle:',
+      emoji: ':usf:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
         '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *submitted* to Student Government.'
@@ -267,7 +267,7 @@ var STATUSES_DATA = {
       selected: 'Mark selected items as ordered',
     },
     slack: {
-      emoji: ':white_circle:',
+      emoji: ':white_check_mark:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
         '{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *ordered*.'
@@ -299,7 +299,7 @@ var STATUSES_DATA = {
       selected: 'Mark selected items as awaiting pickup',
     },
     slack: {
-      emoji: ':large_blue_circle:',
+      emoji: ':package:',
       targetUsers: OPTS.SLACK.TARGET_USERS.CHANNEL,
       messageTemplates: [
         '{emoji} {userFullName} marked {numMarked} item{plural} for {projectName} as awaiting pickup (usually in MSC 4300). _React with ' + OPTS.SLACK.CHECK_MARK_EMOJI + ' if you\'re going to pick them up._'
@@ -365,7 +365,7 @@ var STATUSES_DATA = {
       selected: 'Deny selected items',
     },
     slack: {
-      emoji: ':red_circle:',
+      emoji: ':x:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
         '{emoji} {userTags} {userFullName} *denied* {numMarked} item{plural} for {projectName} (_see comments in database_).'
@@ -397,7 +397,7 @@ var STATUSES_DATA = {
       selected: 'Request more information for selected items'
     },
     slack: {
-      emoji: ':black_circle:',
+      emoji: ':exclamation:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
         '{emoji} {userTags} {userFullName} requested more info for {numMarked} item{plural} for {projectName} (_see comments in database_). Update the information, then resubmit as new items.'
@@ -464,7 +464,7 @@ var STATUSES_DATA = {
       selected: 'Mark selected items as reimbursed'
     },
     slack: {
-      emoji: ':heavy_dollar_sign:',
+      emoji: ':money_with_wings:',
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
         '{emoji} {userTags} {userFullName} sent reimbursement for {numMarked} item{plural}.'
