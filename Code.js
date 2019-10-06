@@ -456,7 +456,7 @@ var STATUSES_DATA = {
   },
   REIMBURSED: {
     text: 'Reimbursed',
-    allowedPrevious: ['Reimbursed'],
+    allowedPrevious: ['Received - Awaiting Reimbursement', 'Received'],
     actionText: {
       fastForward: 'Reimbursed',
       selected: 'Mark selected items as reimbursed'
