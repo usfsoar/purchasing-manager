@@ -1869,15 +1869,27 @@ function protectRanges() {
  * @param {GoogleAppsScript.Drive.Folder} folder
  */
 function openFile(spreadsheet, folder, vendorName) {
-  var vendor = vendorName || "VENDOR+NAME";
+  var vendor =
+    escapeSingleQuotes(encodeURIComponent(vendorName)) || "VENDOR+NAME";
   var spreadsheetId = spreadsheet.getId();
   var folderId = folder.getId();
   var fileUrl = "https://docs.google.com/spreadsheets/d/"+spreadsheetId;
   var folderUrl = "https://drive.google.com/drive/u/2/folders/"+folderId;
-  var currentUserEmail = getCurrentUserInfo().email;
-  var html = "Succesfully sent items to sheet.<br><a target='_blank' href='" + folderUrl + "'>Open Purchasing Sheets Folder</a><br><a target='_blank' href='" + fileUrl + "'>Open The New Purchasing Sheet</a><br /><br /><strong>Remember:</strong> Attach the form to an email sent from your @mail.usf.edu email adress to sg-rmdpurchase@usf.edu with subject \"SOCIETY OF AERONAUTICS AND ROCKETRY, VENDOR NAME, EVENT DATE (if applicable)\". Only one form per email! <br><br> <a  href='https://mail.google.com/mail/u/0/?view=cm&fs=1&to=sg-rmdpurchase@usf.edu&authuser="+currentUserEmail+"&su=SOCIETY+OF+AERONAUTICS+AND+ROCKETRY,+"+vendor+"&body=Please+see+attached+purchasing+form.&tf=1' target='_blank'><strong>Start Email in Gmail</strong></a>";
+  var currentUserEmail = escapeSingleQuotes(
+    encodeURIComponent(getCurrentUserInfo().email)
+  );
+  var emailTemplateLink = "https://mail.google.com/mail/u/0/?view=cm&fs=1&to=sg-rmdpurchase@usf.edu&authuser=" + currentUserEmail + "&su=SOCIETY+OF+AERONAUTICS+AND+ROCKETRY,+" + vendor + "&body=Please+see+attached+purchasing+form.&tf=1";
+  var html = "<div style='font-family: sans-serif;'>Successfully sent items to sheet.<br><a target='_blank' href='" + folderUrl + "'>Open Purchasing Sheets Folder</a><br><a target='_blank' href='" + fileUrl + "'>Open The New Purchasing Sheet</a><br /><br /><strong>Remember:</strong> Attach the form to an email sent from your @mail.usf.edu email adress to sg-rmdpurchase@usf.edu with subject \"SOCIETY OF AERONAUTICS AND ROCKETRY, VENDOR NAME, EVENT DATE (if applicable)\". Only one form per email! <br><br> <a  href='" + emailTemplateLink + "' target='_blank'><strong>Start Email in Gmail</strong></a></div>";
   var userInterface = HtmlService.createHtmlOutput(html);
   SpreadsheetApp.getUi().showModalDialog(userInterface, "Open Sheet");
+}
+
+/**
+ * Escape single quotes in the string for a URL.
+ * @param {string} unescaped
+ */
+function escapeSingleQuotes(unescaped) {
+  return unescaped.replace(/'/g,"%27");
 }
 
 /** Send the selected items to a new purchasing sheet. */
