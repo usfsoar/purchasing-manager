@@ -261,7 +261,7 @@ var STATUSES_DATA = {
   },
   APPROVED: {
     text: 'Ordered',
-    allowedPrevious: ['Submitted'],
+    allowedPrevious: ['Submitted', 'New'],
     actionText: {
       fastForward: 'Ordered',
       selected: 'Mark selected items as ordered',
