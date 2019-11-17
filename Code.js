@@ -1870,12 +1870,12 @@ function protectRanges() {
  */
 function openFile(spreadsheet, folder, vendorName) {
   var vendor =
-    escapeSingleQuotes(encodeURIComponent(vendorName)) || "VENDOR+NAME";
+    escapeSingleQuotesAndSpaces(encodeURIComponent(vendorName)) || "VENDOR+NAME";
   var spreadsheetId = spreadsheet.getId();
   var folderId = folder.getId();
   var fileUrl = "https://docs.google.com/spreadsheets/d/"+spreadsheetId;
   var folderUrl = "https://drive.google.com/drive/u/2/folders/"+folderId;
-  var currentUserEmail = escapeSingleQuotes(
+  var currentUserEmail = escapeSingleQuotesAndSpaces(
     encodeURIComponent(getCurrentUserInfo().email)
   );
   var emailTemplateLink = "https://mail.google.com/mail/u/0/?view=cm&fs=1&to=sg-rmdpurchase@usf.edu&authuser=" + currentUserEmail + "&su=SOCIETY+OF+AERONAUTICS+AND+ROCKETRY,+" + vendor + "&body=Please+see+attached+purchasing+form.&tf=1";
@@ -1888,8 +1888,8 @@ function openFile(spreadsheet, folder, vendorName) {
  * Escape single quotes in the string for a URL.
  * @param {string} unescaped
  */
-function escapeSingleQuotes(unescaped) {
-  return unescaped.replace(/'/g,"%27");
+function escapeSingleQuotesAndSpaces(unescaped) {
+  return unescaped.replace(/'/g,"%27").replace(/ /g,"+");
 }
 
 /** Send the selected items to a new purchasing sheet. */
