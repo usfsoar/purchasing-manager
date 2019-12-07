@@ -423,7 +423,7 @@ var STATUSES_DATA = {
   },
   RECEIVED_REIMBURSE: {
     text: 'Received - Awaiting Reimbursement',
-    allowedPrevious: ['New', 'Submitted', 'Ordered', 'received', 'Awaiting Pickup', 'Awaiting Info'],
+    allowedPrevious: ['', 'New', 'Submitted', 'Ordered', 'Received', 'Awaiting Pickup', 'Awaiting Info'],
     actionText: {
       fastForward: 'Received - Awaiting Reimbursement',
       selected: 'Mark selected items received and request reimbursement'
