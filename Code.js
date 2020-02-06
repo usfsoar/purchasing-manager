@@ -1867,15 +1867,16 @@ function protectRanges() {
  * Show option to open the folder or the file.
  * @param {GoogleAppsScript.Drive.File} spreadsheet
  * @param {GoogleAppsScript.Drive.Folder} folder
+ * @param {string} vendorName
  */
 function openFile(spreadsheet, folder, vendorName) {
   var vendor =
-    escapeSingleQuotesAndSpaces(encodeURIComponent(vendorName)) || "VENDOR+NAME";
+   escapeSpaces(encodeURIComponent(escapeSingleQuotes(vendorName.toUpperCase()))) || "VENDOR+NAME";
   var spreadsheetId = spreadsheet.getId();
   var folderId = folder.getId();
   var fileUrl = "https://docs.google.com/spreadsheets/d/"+spreadsheetId;
   var folderUrl = "https://drive.google.com/drive/u/2/folders/"+folderId;
-  var currentUserEmail = escapeSingleQuotesAndSpaces(
+  var currentUserEmail = escapeSingleQuotes(
     encodeURIComponent(getCurrentUserInfo().email)
   );
   var emailTemplateLink = "https://mail.google.com/mail/u/0/?view=cm&fs=1&to=sg-rmdpurchase@usf.edu&authuser=" + currentUserEmail + "&su=SOCIETY+OF+AERONAUTICS+AND+ROCKETRY,+" + vendor + "&body=Please+see+attached+purchasing+form.&tf=1";
@@ -1888,8 +1889,16 @@ function openFile(spreadsheet, folder, vendorName) {
  * Escape single quotes in the string for a URL.
  * @param {string} unescaped
  */
-function escapeSingleQuotesAndSpaces(unescaped) {
-  return unescaped.replace(/'/g,"%27").replace(/ /g,"+");
+function escapeSingleQuotes(unescaped) {
+  return unescaped.replace(/'/g,"%27");
+}
+
+/**
+ * Escape spaces (replacing `%20` with `+`) in a URI encoded string.
+ * @param {string} unescaped
+ */
+function escapeSpaces(unescaped) {
+  return unescaped.replace(/%20/g,"+");
 }
 
 /** Send the selected items to a new purchasing sheet. */
@@ -1984,5 +1993,5 @@ function sendSelectedToSheet() {
   newSheet.copyTo(newSpreadsheet);
   newSpreadsheet.deleteSheet(newSpreadsheet.getSheetByName("Sheet1"));
   currentSpreadsheet.deleteSheet(newSheet);
-  openFile(file, targetFolder, encodeURIComponent(vendor.toUpperCase()));
+  openFile(file, targetFolder, vendor);
 }
