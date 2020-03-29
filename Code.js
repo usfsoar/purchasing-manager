@@ -1615,9 +1615,10 @@ function buildItemListSlackAttachment(items, projectName, projectSheetUrl, user,
       title_link: projectSheetUrl,
       color: projectColor,
       fields: itemsByCategory[category].map(function(item) {
+        var totalPrice = typeof item.totalPrice === "number" ? item.toFixed(2) : "UNKNOWN";
         var itemField = {
           title: truncateString(item.name, 45),
-          value: "$" + item.totalPrice.toFixed(2) + "\n\t (" + item.quantity + "x @ $" + item.unitPrice.toFixed(2) + "/e)",
+          value: "$" + totalPrice + "\n\t (" + item.quantity + "x @ $" + item.unitPrice.toFixed(2) + "/e)",
           short: "true"
         };
 
