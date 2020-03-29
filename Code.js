@@ -1741,21 +1741,6 @@ function buildItemListSlackAttachment(
     value: ""
   };
 
-  /*var sep = "   ";
-
-  items.forEach(function(currentItem) {
-    var currentItemString =
-        truncateString(currentItem.name, 35, true) + sep +
-        truncateString(currentItem.quantity, 3, true, true) + sep +
-        truncateString("$" + currentItem.totalPrice.toFixed(2), 5, true, true) + sep +
-        currentItem.category + "{NL}";
-    if(currentItem.requestorComments) currentItemString += "{TAB}Note: \"" + currentItem.requestorComments + "\"{NL}";
-    if(currentItem.officerComments) currentItemString += "{TAB}Officer Note: \"" + currentItem.officerComments + "\"{NL}";
-    attachment.value += currentItemString;
-  });
-
-  attachment.value = truncateString(attachment.value, 2000);*/
-
   var itemListMessage = {
     response_type: "ephemeral",
     replace_original: false,
@@ -1991,11 +1976,6 @@ function protectRanges() {
   var officerProtectDescription =
     "This part of the sheet can only be edited by Financial Officers.";
 
-  /*SpreadsheetApp.getActiveSpreadsheet().getProtections(SpreadsheetApp.ProtectionType.RANGE)
-      .forEach(function(protection) {
-        protection.remove();
-      });*/
-
   SpreadsheetApp.getActiveSpreadsheet()
     .getProtections(SpreadsheetApp.ProtectionType.SHEET)
     .forEach(function(protection) {
@@ -2005,41 +1985,17 @@ function protectRanges() {
   sheets.forEach(function(sheet) {
     var sheetName = sheet.getName();
 
-    if (projectSheetNames.indexOf(sheetName) !== -1) {
-      // The below code was taking too long so now we maintain range protections manually
-      // Lock certain sections of project sheets (only the headers and formula-driven parts)
-      /*var numDataRows = sheet.getLastRow() - OPTS.NUM_HEADER_ROWS;
-
-      var headerRangeProtection = sheet.getRange(1, 1, OPTS.NUM_HEADER_ROWS, sheet.getLastColumn()).protect();
-      var calculatedPriceColumnProtection = sheet.getRange(1, OPTS.ITEM_COLUMNS.TOTAL_PRICE.index,numDataRows, 1).protect();
-      var financialOfficerRangeProtection = sheet.getRange(3, OPTS.ITEM_COLUMNS.OFFICER_EMAIL.index, numDataRows, OPTS.NUM_OFFICER_COLS).protect();
-
-      headerRangeProtection.removeEditors(headerRangeProtection.getEditors());
-      calculatedPriceColumnProtection.removeEditors(calculatedPriceColumnProtection.getEditors());
-      financialOfficerRangeProtection.removeEditors(financialOfficerRangeProtection.getEditors());
-
-      headerRangeProtection.setDescription(adminProtectDescription);
-      calculatedPriceColumnProtection.setDescription(adminProtectDescription);
-      financialOfficerRangeProtection.setDescription(officerProtectDescription);
-
-      headerRangeProtection.addEditor(admin);
-      calculatedPriceColumnProtection.addEditor(admin);
-      financialOfficerRangeProtection.addEditors(financialOfficers);*/
-    } else if (sheetName !== userDataSheetName) {
-      // Lock the entire sheet if not the user data sheet
+    if (
+      projectSheetNames.indexOf(sheetName) === -1 &&
+      sheetName !== userDataSheetName
+    ) {
+      // Lock the entire sheet if not the user data sheet or a project sheet
       var sheetProtection = sheet.protect();
       sheetProtection.removeEditors(sheetProtection.getEditors());
       sheetProtection.addEditors(financialOfficers);
       successNotification("Updated protections for " + sheetName);
     }
   });
-
-  // Protect the statuses, since they need to match the values in the script
-  /*var statusesProtection = SpreadsheetApp.getActiveSpreadsheet()
-      .getRangeByName(OPTS.NAMED_RANGES.STATUSES).protect();
-  statusesProtection.setDescription(adminProtectDescription);
-  statusesProtection.removeEditors(statusesProtection.getEditors());
-  statusesProtection.addEditor(admin);*/
 }
 
 /**
