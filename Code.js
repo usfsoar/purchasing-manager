@@ -253,8 +253,7 @@ var STATUSES_DATA = {
     },
     reccomendedColumns: [
       OPTS.ITEM_COLUMNS.ACCOUNT,
-      OPTS.ITEM_COLUMNS.CATEGORY,
-      OPTS.ITEM_COLUMNS.REQUEST_ID
+      OPTS.ITEM_COLUMNS.CATEGORY
     ],
     fillInDefaults: true,
     officersOnly: true,
