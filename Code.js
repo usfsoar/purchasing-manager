@@ -10,7 +10,7 @@
  * @readonly
  * @global
  */
-var OPTS = {
+const OPTS = {
   /** Named Ranges throughout the spreadsheet. */
   NAMED_RANGES: {
     /** Range containing the email addresses of approved officers.
@@ -148,7 +148,7 @@ var OPTS = {
  * submitter, {numMarked} with the number of items marked, {projectName} with
  * the name of the project, and {projectSheetUrl} with the link to the project
  * sheet.
- * @prop {string[]} slack.channelWebhooks Webhooks to send Slack messages to.
+ * @prop {(() => string)[]} slack.channelWebhooks Webhooks to send Slack messages to.
  * Will only tag targetUsers in the first channel provided, to avoid annoying.
  * @prop {string} slack.emoji Emoji to send with slack message.
  * @prop {EnumTARGET_USERS} slack.targetUsers String representing a user group
@@ -172,7 +172,7 @@ var OPTS = {
  * @global
  * @enum {Status}
  */
-var STATUSES_DATA = {
+const STATUSES_DATA = {
   CREATED: {
     text: "",
     allowedPrevious: [],
@@ -198,7 +198,7 @@ var STATUSES_DATA = {
       messageTemplates: [
         "{emoji} {userTags} {userFullName} has submitted {numMarked} new item{plural} to be purchased for {projectName}.",
       ],
-      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
+      channelWebhooks: [() => getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       user: OPTS.ITEM_COLUMNS.REQUEST_EMAIL,
@@ -230,7 +230,7 @@ var STATUSES_DATA = {
       messageTemplates: [
         "{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *submitted* to Student Government.",
       ],
-      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
+      channelWebhooks: [() => getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       user: OPTS.ITEM_COLUMNS.OFFICER_EMAIL,
@@ -257,7 +257,7 @@ var STATUSES_DATA = {
       messageTemplates: [
         "{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *ordered*.",
       ],
-      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
+      channelWebhooks: [() => getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       user: null,
@@ -285,7 +285,7 @@ var STATUSES_DATA = {
           OPTS.SLACK.CHECK_MARK_EMOJI +
           " if you're going to pick them up._",
       ],
-      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
+      channelWebhooks: [() => getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       user: null,
@@ -315,7 +315,7 @@ var STATUSES_DATA = {
       messageTemplates: [
         "{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as received (picked up).",
       ],
-      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
+      channelWebhooks: [() => getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       user: OPTS.ITEM_COLUMNS.receive_EMAIL,
@@ -345,7 +345,7 @@ var STATUSES_DATA = {
       messageTemplates: [
         "{emoji} {userTags} {userFullName} *denied* {numMarked} item{plural} for {projectName} (_see comments in database_).",
       ],
-      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
+      channelWebhooks: [() => getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       user: OPTS.ITEM_COLUMNS.OFFICER_EMAIL,
@@ -371,7 +371,7 @@ var STATUSES_DATA = {
       messageTemplates: [
         "{emoji} {userTags} {userFullName} requested more info for {numMarked} item{plural} for {projectName} (_see comments in database_). Update the information, then resubmit as new items.",
       ],
-      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
+      channelWebhooks: [() => getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       user: OPTS.ITEM_COLUMNS.OFFICER_EMAIL,
@@ -405,7 +405,7 @@ var STATUSES_DATA = {
       messageTemplates: [
         "{emoji} {userTags} {userFullName} marked {numMarked} item{plural} as received for {projectName} and requested reimbursement for them.",
       ],
-      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
+      channelWebhooks: [() => getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       date: OPTS.ITEM_COLUMNS.receive_DATE,
@@ -435,7 +435,7 @@ var STATUSES_DATA = {
       messageTemplates: [
         "{emoji} {userTags} {userFullName} sent reimbursement for {numMarked} item{plural}.",
       ],
-      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
+      channelWebhooks: [() => getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       date: OPTS.ITEM_COLUMNS.UPDATE_DATE,
@@ -454,7 +454,7 @@ var STATUSES_DATA = {
   },
 };
 
-var TEST_STATUS = {
+const TEST_STATUS = {
   text: "Test",
   allowedPrevious: ["", "Test"],
   actionText: {
@@ -467,7 +467,7 @@ var TEST_STATUS = {
     messageTemplates: [
       "{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *test* by TEsting.",
     ],
-    channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.DEV],
+    channelWebhooks: [() => getSecretOpts().SLACK.WEBHOOKS.DEV],
   },
   columns: {
     user: null,
@@ -483,7 +483,7 @@ var TEST_STATUS = {
 
 // Handle post request from Slack
 function doPost(e) {
-  var message = {
+  let message = {
     response_type: "ephemeral",
     replace_original: false,
     text: "Error: command not found.",
@@ -491,18 +491,18 @@ function doPost(e) {
 
   if (e.parameter.command == "/budgetstatus") {
     // If the budgetStatus command, send the budgetStatus message
-    var text = e.parameter.text;
-    var sheetName = getSheetNameFromProjectName(text, true);
+    let text = e.parameter.text;
+    let sheetName = getSheetNameFromProjectName(text, true);
     if (sheetName !== null) text = sheetName;
     message = buildProjectStatusSlackMessage(text);
   } else if (e.parameter.payload) {
     // Else maybe it's an interactive message command. Parse the payload and check.
-    var payload = JSON.parse(e.parameter.payload);
+    let payload = JSON.parse(e.parameter.payload);
     console.log(payload);
 
     if (payload.type === "interactive_message" && payload.actions) {
       if (payload.actions[0].name === OPTS.SLACK.ITEM_LIST_ACTION_NAME_LEGACY) {
-        var parsedText = payload.actions[0].value;
+        let parsedText = payload.actions[0].value;
 
         message = {
           response_type: "ephemeral",
@@ -561,7 +561,7 @@ function buildSlackMessages(
   dontTagUsers
 ) {
   if (!dontTagUsers) {
-    var targetUserTagsString = "";
+    let targetUserTagsString = "";
     switch (statusData.slack.targetUsers) {
       case OPTS.SLACK.TARGET_USERS.CHANNEL:
         targetUserTagsString = "<!channel>";
@@ -569,18 +569,18 @@ function buildSlackMessages(
 
       case OPTS.SLACK.TARGET_USERS.OFFICERS:
         /** Array of booleans with indexes that match officers. Only false if NO. */
-        var officerNotifyOptions = getNamedRangeValues(
+        let officerNotifyOptions = getNamedRangeValues(
           OPTS.NAMED_RANGES.NOTIFY_APPROVED_OFFICERS
         ).map(function (value) {
           return value !== "NO";
         });
         /** Emails of all the officers that do get notified. */
-        var officerEmails = getNamedRangeValues(
+        let officerEmails = getNamedRangeValues(
           OPTS.NAMED_RANGES.APPROVED_OFFICERS
         ).filter(function (email, index) {
           return officerNotifyOptions[index];
         });
-        var officerUserTags = officerEmails
+        let officerUserTags = officerEmails
           .map(getSlackTagByEmail)
           .filter(function (slackTag) {
             return slackTag != "";
@@ -589,12 +589,12 @@ function buildSlackMessages(
         break;
 
       case OPTS.SLACK.TARGET_USERS.REQUESTORS:
-        var requestorUserTags = requestors.map(getSlackTagByEmail);
+        let requestorUserTags = requestors.map(getSlackTagByEmail);
         targetUserTagsString = makeListFromArray(requestorUserTags, "");
     }
   }
 
-  return statusData.slack.messageTemplates.map(function (template, index) {
+  return statusData.slack.messageTemplates.map((template) => {
     return replaceAll(
       template,
       new Map([
@@ -617,44 +617,44 @@ function buildSlackMessages(
  * @returns {Object} A valid Slack message with attachments.
  */
 function buildProjectStatusSlackMessage(project) {
-  var projectSheetName = getSheetNameFromProjectName(project, true) || project;
+  let projectSheetName = getSheetNameFromProjectName(project, true) || project;
   if (!checkIfProjectSheet(projectSheetName))
     return {
       response_type: "ephemeral",
       text: "Sorry, I don't recognize that project.",
     };
-  var projectName = getProjectNameFromSheetName(project);
+  let projectName = getProjectNameFromSheetName(project);
 
-  var dashboardSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(
+  let dashboardSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(
     projectSheetName + " Dashboard"
   );
-  var totalBudget = dashboardSheet
+  let totalBudget = dashboardSheet
     .getRange(
       OPTS.DASHBOARD_CELLS.TOTAL_BUDGET.row,
       OPTS.DASHBOARD_CELLS.TOTAL_BUDGET.column
     )
     .getValue();
-  var totalExpenses = dashboardSheet
+  let totalExpenses = dashboardSheet
     .getRange(
       OPTS.DASHBOARD_CELLS.TOTAL_EXPENSES.row,
       OPTS.DASHBOARD_CELLS.TOTAL_EXPENSES.column
     )
     .getValue();
 
-  var budgetRemaining = (totalBudget - totalExpenses).toFixed(2);
-  var percentBudgetRemaining = ((budgetRemaining / totalBudget) * 100).toFixed(
+  let budgetRemaining = (totalBudget - totalExpenses).toFixed(2);
+  let percentBudgetRemaining = ((budgetRemaining / totalBudget) * 100).toFixed(
     0
   );
 
-  var dashboardSheetUrl =
+  let dashboardSheetUrl =
     SpreadsheetApp.getActiveSpreadsheet().getUrl() +
     "#gid=" +
     dashboardSheet.getSheetId();
 
-  var projectSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(
+  let projectSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(
     projectSheetName
   );
-  var projectSheetUrl =
+  let projectSheetUrl =
     SpreadsheetApp.getActiveSpreadsheet().getUrl() +
     "#gid=" +
     projectSheet.getSheetId();
@@ -734,14 +734,14 @@ function onOpen() {
  * array.
  */
 function getNamedRangeValues(rangeName) {
-  var valuesGrid = SpreadsheetApp.getActiveSpreadsheet()
+  let valuesGrid = SpreadsheetApp.getActiveSpreadsheet()
     .getRange(rangeName)
     .getValues();
 
   // Flatten and remove empty values
-  var valuesArray = [].concat.apply([], valuesGrid).filter(function (value) {
-    return value !== "";
-  });
+  let valuesArray = [].concat
+    .apply([], valuesGrid)
+    .filter((value) => value !== "");
 
   return valuesArray;
 }
@@ -753,13 +753,13 @@ function buildAndAddCustomMenu() {
   // Use yourFunction.name because it requires a string and this is a little
   // more reusable than just hardcoding the name
 
-  var customMenu = SpreadsheetApp.getUi()
+  let customMenu = SpreadsheetApp.getUi()
     .createMenu(OPTS.CUSTOM_MENU.NAME)
     .addItem(STATUSES_DATA.NEW.actionText.all, markAllNew.name)
     .addItem(STATUSES_DATA.NEW.actionText.selected, markSelectedNew.name);
 
-  var fastFowardMenu = null;
-  var testMenu = null;
+  let fastFowardMenu = null;
+  let testMenu = null;
 
   if (verifyFinancialOfficer()) {
     customMenu
@@ -901,9 +901,9 @@ function successNotification(message) {
  * @returns {{slackId:string,fullName:string,email:string,isFinancialOfficer:boolean,phone?:string}}
  * Information about the user.
  */
-var getCurrentUserInfo = (function () {
-  var currentEmail = Session.getActiveUser().getEmail();
-  var cache = {
+let getCurrentUserInfo = (function () {
+  let currentEmail = Session.getActiveUser().getEmail();
+  let cache = {
     slackId: /** @type {?string} */ (null),
     fullName: /** @type {?string} */ (null),
     isFinancialOfficer: verifyFinancialOfficer(currentEmail),
@@ -916,13 +916,13 @@ var getCurrentUserInfo = (function () {
       cache.email !== null &&
       (cache.slackId === null || cache.fullName == null)
     ) {
-      var userSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(
+      let userSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(
         OPTS.SHEET_NAMES.USERS
       );
-      var userData = userSheet.getDataRange().getValues();
+      let userData = userSheet.getDataRange().getValues();
 
-      var userDataFound = false;
-      for (var i = 1; i < userData.length; i++) {
+      let userDataFound = false;
+      for (let i = 1; i < userData.length; i++) {
         if (userData[i][0] === cache.email) {
           cache.slackId = userData[i][1];
           cache.fullName = userData[i][2];
@@ -973,9 +973,7 @@ function verifyFinancialOfficer(email) {
  * @returns {boolean} true if the current user is an admin.
  */
 function verifyAdmin() {
-  if (Session.getActiveUser().getEmail() === getSecretOpts().ADMIN_EMAIL)
-    return true;
-  return false;
+  return Session.getActiveUser().getEmail() === getSecretOpts().ADMIN_EMAIL;
 }
 
 /**
@@ -984,12 +982,12 @@ function verifyAdmin() {
  * @returns {?string} The Slack ID or null if no match.
  */
 function getSlackIdByEmail(email) {
-  var userSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(
+  let userSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(
     OPTS.SHEET_NAMES.USERS
   );
-  var userData = userSheet.getDataRange().getValues();
+  let userData = userSheet.getDataRange().getValues();
 
-  for (var i = 1; i < userData.length; i++) {
+  for (let i = 1; i < userData.length; i++) {
     if (userData[i][0] === email) {
       return userData[i][1];
     }
@@ -1004,7 +1002,7 @@ function getSlackIdByEmail(email) {
  * @returns {string} The Slack ID or '' if no match.
  */
 function getSlackTagByEmail(email) {
-  var slackId = getSlackIdByEmail(email);
+  let slackId = getSlackIdByEmail(email);
   return slackId ? "<@" + getSlackIdByEmail(email) + ">" : "";
 }
 
@@ -1020,10 +1018,10 @@ function makeListFromArray(listArray, conjunction, noOxfordComma) {
    * The oxford comma, or an empty string if `noOxfordComma` is true or the array
    * is too short.
    */
-  var oxfordComma = noOxfordComma || listArray.length <= 2 ? "" : ",";
+  let oxfordComma = noOxfordComma || listArray.length <= 2 ? "" : ",";
   conjunction = conjunction === undefined ? "and" : conjunction;
 
-  return listArray.reduce(function (finalString, listItem, index) {
+  return listArray.reduce((finalString, listItem, index) => {
     switch (index) {
       case 0:
         return listItem;
@@ -1051,8 +1049,8 @@ function truncateString(longString, chars, pad, padOnly) {
     longString = longString.slice(0, chars - 4) + "...";
   }
   if (pad) {
-    var padding = chars - longString.length > 0 ? chars - longString.length : 0;
-    for (var i = 0; i < padding; i++) longString += " ";
+    let padding = chars - longString.length > 0 ? chars - longString.length : 0;
+    for (let i = 0; i < padding; i++) longString += " ";
   }
   return longString;
 }
@@ -1063,14 +1061,14 @@ function truncateString(longString, chars, pad, padOnly) {
  * expanded to cover entire width of data in the sheet.
  */
 function getSelectedRows() {
-  var activeSheet = SpreadsheetApp.getActiveSheet();
-  var selections = activeSheet.getSelection().getActiveRangeList().getRanges();
-  var lastColumn = activeSheet.getLastColumn();
+  let activeSheet = SpreadsheetApp.getActiveSheet();
+  let selections = activeSheet.getSelection().getActiveRangeList().getRanges();
+  let lastColumn = activeSheet.getLastColumn();
 
   // Expand selections to width of spreadsheet
-  var expandedSelections = selections.map(function (selectionRange) {
-    var selectionStartRow = selectionRange.getRow();
-    var selectionNumRows = selectionRange.getNumRows();
+  let expandedSelections = selections.map((selectionRange) => {
+    let selectionStartRow = selectionRange.getRow();
+    let selectionNumRows = selectionRange.getNumRows();
     if (selectionStartRow === 1) {
       selectionStartRow++;
       selectionNumRows--;
@@ -1095,23 +1093,23 @@ function getSelectedRows() {
  * @returns {GoogleAppsScript.Spreadsheet.Range[]} Array with one Range.
  */
 function getAllRows() {
-  var activeSheet = SpreadsheetApp.getActiveSheet();
-  var lastColumnInSheet = activeSheet.getLastColumn();
-  var firstNonHeaderRow = OPTS.NUM_HEADER_ROWS + 1;
+  let activeSheet = SpreadsheetApp.getActiveSheet();
+  let lastColumnInSheet = activeSheet.getLastColumn();
+  let firstNonHeaderRow = OPTS.NUM_HEADER_ROWS + 1;
 
-  var nameColumnValues = getColumnRange(
+  let nameColumnValues = getColumnRange(
     OPTS.ITEM_COLUMNS.NAME.index
   ).getValues();
 
   /** The number of the last row in the sheet that has a value for Name. */
-  var lastRowWithData = firstNonHeaderRow;
+  let lastRowWithData = firstNonHeaderRow;
 
-  nameColumnValues.forEach(function (name, index) {
+  nameColumnValues.forEach((name, index) => {
     if (name.toString().trim() !== "")
       lastRowWithData = index + firstNonHeaderRow;
   });
 
-  var numNonHeaderRowsWithData = lastRowWithData - OPTS.NUM_HEADER_ROWS;
+  let numNonHeaderRowsWithData = lastRowWithData - OPTS.NUM_HEADER_ROWS;
 
   return [
     activeSheet.getRange(
@@ -1130,9 +1128,9 @@ function getAllRows() {
  * @returns {boolean} True if a project sheet is active.
  */
 function checkIfProjectSheet(sheetName) {
-  var currentSheetName = sheetName || SpreadsheetApp.getActiveSheet().getName();
+  let currentSheetName = sheetName || SpreadsheetApp.getActiveSheet().getName();
 
-  var projectSheetNames = getNamedRangeValues(OPTS.NAMED_RANGES.PROJECT_SHEETS);
+  let projectSheetNames = getNamedRangeValues(OPTS.NAMED_RANGES.PROJECT_SHEETS);
 
   if (projectSheetNames.indexOf(currentSheetName) === -1) {
     errorNotification("This action may only be performed in a project sheet");
@@ -1148,9 +1146,9 @@ function checkIfProjectSheet(sheetName) {
  * @returns {GoogleAppsScript.Spreadsheet.Range} The range of the column.
  */
 function getColumnRange(columnNumber) {
-  var activeSheet = SpreadsheetApp.getActiveSheet();
-  var firstNonHeaderRow = OPTS.NUM_HEADER_ROWS + 1;
-  var numNonHeaderRows = activeSheet.getLastRow() - OPTS.NUM_HEADER_ROWS;
+  let activeSheet = SpreadsheetApp.getActiveSheet();
+  let firstNonHeaderRow = OPTS.NUM_HEADER_ROWS + 1;
+  let numNonHeaderRows = activeSheet.getLastRow() - OPTS.NUM_HEADER_ROWS;
 
   return activeSheet.getRange(
     firstNonHeaderRow,
@@ -1178,21 +1176,21 @@ function markItems(newStatus, markAll) {
     return;
 
   /** All the ranges in the sheet if `markAll` is set, else just the selected. */
-  var selectedRanges = markAll ? getAllRows() : getSelectedRows();
+  let selectedRanges = markAll ? getAllRows() : getSelectedRows();
 
-  var numMarked = 0;
-  var currentUser = getCurrentUserInfo();
-  var currentUserEmail = currentUser.email;
-  var currentUserFullName = currentUser.fullName;
-  var currentDate = new Date();
+  let numMarked = 0;
+  let currentUser = getCurrentUserInfo();
+  let currentUserEmail = currentUser.email;
+  let currentUserFullName = currentUser.fullName;
+  let currentDate = new Date();
 
-  var currentSheet = SpreadsheetApp.getActiveSheet();
-  var projectName = getProjectNameFromSheetName(currentSheet.getSheetName());
-  var projectSheetUrl =
+  let currentSheet = SpreadsheetApp.getActiveSheet();
+  let projectName = getProjectNameFromSheetName(currentSheet.getSheetName());
+  let projectSheetUrl =
     SpreadsheetApp.getActiveSpreadsheet().getUrl() +
     "#gid=" +
     currentSheet.getSheetId();
-  var itemRequestors = /** @type {string[]} */ ([]);
+  let itemRequestors = /** @type {string[]} */ ([]);
 
   // We would filter out all the rows with disallowed current statuses here,
   // rather than skipping them in both of these loops, but that would require
@@ -1203,15 +1201,15 @@ function markItems(newStatus, markAll) {
   // loop because if it were the same, we could modify some of the data before
   // seeing that other data is invalid, which would not be the expected behavior.
   // No need to alert the user on fail; validateRow will do that itself.
-  var allRowsValid = true;
+  let allRowsValid = true;
 
-  selectionsLoop: for (var i = 0; i < selectedRanges.length; i++) {
-    var range = selectedRanges[i];
-    var rangeValues = range.getValues();
+  selectionsLoop: for (let i = 0; i < selectedRanges.length; i++) {
+    let range = selectedRanges[i];
+    let rangeValues = range.getValues();
 
-    for (var j = 0; j < range.getNumRows(); j++) {
+    for (let j = 0; j < range.getNumRows(); j++) {
       /** Array of row values. */
-      var row = rangeValues[j];
+      let row = rangeValues[j];
       // If current status is not in allowed statuses, don't verify, just skip
       // minus 1 to convert from 1-based Sheets column number to 0-based array index
       if (
@@ -1232,10 +1230,10 @@ function markItems(newStatus, markAll) {
 
   if (allRowsValid) {
     // Cache the entire columns, to avoid making dozens of calls to the server
-    var statusColumn = getColumnRange(OPTS.ITEM_COLUMNS.STATUS.index);
-    var statusColumnValues = statusColumn.getValues();
+    let statusColumn = getColumnRange(OPTS.ITEM_COLUMNS.STATUS.index);
+    let statusColumnValues = statusColumn.getValues();
 
-    var userColumn, dateColumn, userColumnValues, dateColumnValues;
+    let userColumn, dateColumn, userColumnValues, dateColumnValues;
     if (newStatus.columns.user) {
       userColumn = getColumnRange(newStatus.columns.user.index);
       userColumnValues = userColumn.getValues();
@@ -1245,7 +1243,7 @@ function markItems(newStatus, markAll) {
       dateColumnValues = dateColumn.getValues();
     }
 
-    var accountColumn,
+    let accountColumn,
       categoryColumn,
       accountColumnValues,
       categoryColumnValues;
@@ -1257,7 +1255,7 @@ function markItems(newStatus, markAll) {
     }
 
     // Read (not modify, so no need for range) the requestor data for notifying
-    var requestorColumnValues;
+    let requestorColumnValues;
     if (newStatus.slack.targetUsers === OPTS.SLACK.TARGET_USERS.REQUESTORS) {
       requestorColumnValues = getColumnRange(
         OPTS.ITEM_COLUMNS.REQUEST_EMAIL.index
@@ -1265,26 +1263,26 @@ function markItems(newStatus, markAll) {
     }
 
     /* List of items, for sending to Slack */
-    var items = [];
+    let items = [];
 
     // Loop through the ranges
-    for (var k = 0; k < selectedRanges.length; k++) {
-      var range = selectedRanges[k];
-      var rangeStartIndex = range.getRow() - 1;
-      var rangeValues = range.getValues();
+    for (let k = 0; k < selectedRanges.length; k++) {
+      let range = selectedRanges[k];
+      let rangeStartIndex = range.getRow() - 1;
+      let rangeValues = range.getValues();
 
       // Loop through the rows in the range
-      rowLoop: for (var l = 0; l < range.getNumRows(); l++) {
+      rowLoop: for (let l = 0; l < range.getNumRows(); l++) {
         /** The index (not number) of the current row in the spreadsheet. */
-        var currentSheetRowIndex = rangeStartIndex + l;
+        let currentSheetRowIndex = rangeStartIndex + l;
         /**
          * The index of the current value row in the spreadsheet, with the first
          * row after the headers being 0.
          */
-        var currentValuesRowIndex = currentSheetRowIndex - OPTS.NUM_HEADER_ROWS;
+        let currentValuesRowIndex = currentSheetRowIndex - OPTS.NUM_HEADER_ROWS;
 
         // If this row's status is not in allowed statuses, don't verify, just skip
-        var currentStatusText = statusColumnValues[
+        let currentStatusText = statusColumnValues[
           currentValuesRowIndex
         ][0].toString();
         if (!isCurrentStatusAllowed(currentStatusText, newStatus))
@@ -1354,7 +1352,7 @@ function markItems(newStatus, markAll) {
     }
 
     /** All of the possible 'from' statuses, but with double quotes around them. */
-    var quotedFromStatuses = newStatus.allowedPrevious.map(wrapInDoubleQuotes);
+    let quotedFromStatuses = newStatus.allowedPrevious.map(wrapInDoubleQuotes);
 
     successNotification(
       items.length +
@@ -1365,7 +1363,7 @@ function markItems(newStatus, markAll) {
         '."'
     );
 
-    var projectColor = currentSheet.getTabColor();
+    let projectColor = currentSheet.getTabColor();
 
     if (items.length !== 0) {
       slackNotifyItems(
@@ -1392,19 +1390,19 @@ function markItems(newStatus, markAll) {
 function fastForwardItems(newStatus) {
   if (!checkIfProjectSheet() || !verifyFinancialOfficer()) return;
 
-  var selectedRanges = getSelectedRows();
+  let selectedRanges = getSelectedRows();
 
-  var numMarked = 0;
-  var currentOfficer = getCurrentUserInfo();
-  var currentOfficerEmail = currentOfficer.email;
-  var currentDate = new Date();
+  let numMarked = 0;
+  let currentOfficer = getCurrentUserInfo();
+  let currentOfficerEmail = currentOfficer.email;
+  let currentDate = new Date();
 
   // Cache the entire columns, to avoid making dozens of calls to the server
-  var statusColumn = getColumnRange(OPTS.ITEM_COLUMNS.STATUS.index);
-  var statusColumnValues = statusColumn.getValues();
+  let statusColumn = getColumnRange(OPTS.ITEM_COLUMNS.STATUS.index);
+  let statusColumnValues = statusColumn.getValues();
 
   // Fetch normal columns to update
-  var userColumn, dateColumn, userColumnValues, dateColumnValues;
+  let userColumn, dateColumn, userColumnValues, dateColumnValues;
   if (newStatus.columns.user) {
     userColumn = getColumnRange(newStatus.columns.user.index);
     userColumnValues = userColumn.getValues();
@@ -1415,7 +1413,7 @@ function fastForwardItems(newStatus) {
   }
 
   // Fetch default columns to fill if empty
-  var accountColumn, categoryColumn, accountColumnValues, categoryColumnValues;
+  let accountColumn, categoryColumn, accountColumnValues, categoryColumnValues;
   if (newStatus.fillInDefaults) {
     accountColumn = getColumnRange(OPTS.ITEM_COLUMNS.ACCOUNT.index);
     categoryColumn = getColumnRange(OPTS.ITEM_COLUMNS.CATEGORY.index);
@@ -1424,37 +1422,37 @@ function fastForwardItems(newStatus) {
   }
 
   // Fetch fast-forward columns to fill if empty
-  var pastUserColumns,
+  let pastUserColumns,
     pastDateColumns,
     pastUserColumnsValues,
     pastDateColumnsValues;
-  pastUserColumns = newStatus.fastForwardColumns.user.map(function (ffCol) {
-    return getColumnRange(ffCol.index);
-  });
-  pastDateColumns = newStatus.fastForwardColumns.date.map(function (ffCol) {
-    return getColumnRange(ffCol.index);
-  });
-  pastUserColumnsValues = pastUserColumns.map(function (colRange) {
-    return colRange.getValues();
-  });
-  pastDateColumnsValues = pastDateColumns.map(function (colRange) {
-    return colRange.getValues();
-  });
+  pastUserColumns = newStatus.fastForwardColumns.user.map((ffCol) =>
+    getColumnRange(ffCol.index)
+  );
+  pastDateColumns = newStatus.fastForwardColumns.date.map((ffCol) =>
+    getColumnRange(ffCol.index)
+  );
+  pastUserColumnsValues = pastUserColumns.map((colRange) =>
+    colRange.getValues()
+  );
+  pastDateColumnsValues = pastDateColumns.map((colRange) =>
+    colRange.getValues()
+  );
 
   // Loop through the ranges
-  for (var k = 0; k < selectedRanges.length; k++) {
-    var range = selectedRanges[k];
-    var rangeStartIndex = range.getRow() - 1;
+  for (let k = 0; k < selectedRanges.length; k++) {
+    let range = selectedRanges[k];
+    let rangeStartIndex = range.getRow() - 1;
 
     // Loop through the rows in the range
-    for (var l = 0; l < range.getNumRows(); l++) {
+    for (let l = 0; l < range.getNumRows(); l++) {
       /** The index (not number) of the current row in the spreadsheet. */
-      var currentSheetRowIndex = rangeStartIndex + l;
+      let currentSheetRowIndex = rangeStartIndex + l;
       /**
        * The index of the current value row in the spreadsheet, with the first
        * row after the headers being 0.
        */
-      var currentValuesRowIndex = currentSheetRowIndex - OPTS.NUM_HEADER_ROWS;
+      let currentValuesRowIndex = currentSheetRowIndex - OPTS.NUM_HEADER_ROWS;
 
       // Update values in local cache
       // These ranges don't include the header, so 0 in the range is
@@ -1480,12 +1478,12 @@ function fastForwardItems(newStatus) {
       }
 
       // If any of the past columns are blank, fill them in with current info
-      pastUserColumnsValues.forEach(function (columnValues) {
+      pastUserColumnsValues.forEach((columnValues) => {
         if (columnValues[currentValuesRowIndex][0].toString() === "") {
           columnValues[currentValuesRowIndex][0] = currentOfficerEmail;
         }
       });
-      pastDateColumnsValues.forEach(function (columnValues) {
+      pastDateColumnsValues.forEach((columnValues) => {
         if (columnValues[currentValuesRowIndex][0].toString() === "") {
           columnValues[currentValuesRowIndex][0] = currentDate;
         }
@@ -1506,12 +1504,12 @@ function fastForwardItems(newStatus) {
     categoryColumn.setValues(categoryColumnValues);
   }
 
-  pastUserColumns.forEach(function (columnRange, index) {
-    columnRange.setValues(pastUserColumnsValues[index]);
-  });
-  pastDateColumns.forEach(function (columnRange, index) {
-    columnRange.setValues(pastDateColumnsValues[index]);
-  });
+  pastUserColumns.forEach((columnRange, index) =>
+    columnRange.setValues(pastUserColumnsValues[index])
+  );
+  pastDateColumns.forEach((columnRange, index) =>
+    columnRange.setValues(pastDateColumnsValues[index])
+  );
 
   successNotification(
     numMarked + ' items fast-forwarded to "' + newStatus.text + '."'
@@ -1539,7 +1537,7 @@ function pushIfNewAndTruthy(arr, potentialNewItem) {
  * changed to the newStatus.
  */
 function isCurrentStatusAllowed(currentStatusText, newStatus) {
-  var currentStatusTrimmed = currentStatusText.trim();
+  let currentStatusTrimmed = currentStatusText.trim();
   return newStatus.allowedPrevious.indexOf(currentStatusTrimmed) !== -1;
 }
 
@@ -1563,10 +1561,10 @@ function wrapInDoubleQuotes(stringToWrap) {
  * @returns {boolean} True if the row is valid and can be submitted.
  */
 function validateRow(rowValues, newStatus) {
-  var column, columnIndex;
+  let column, columnIndex;
 
   for (
-    var i = 0;
+    let i = 0;
     newStatus.reccomendedColumns && i < newStatus.reccomendedColumns.length;
     i++
   ) {
@@ -1581,7 +1579,7 @@ function validateRow(rowValues, newStatus) {
   }
 
   for (
-    var j = 0;
+    let j = 0;
     newStatus.requiredColumns && j < newStatus.requiredColumns.length;
     j++
   ) {
@@ -1605,7 +1603,7 @@ function validateRow(rowValues, newStatus) {
  * @param {Object} messageData The message to send, according to the Slack API.
  */
 function sendSlackMessage(messageData, webhook) {
-  var requestOptions = {
+  let requestOptions = {
     method: "post",
     payload: JSON.stringify(messageData),
     contentType: "application/json",
@@ -1644,8 +1642,8 @@ function slackNotifyItems(
   projectSheetUrl,
   projectColor
 ) {
-  statusData.slack.channelWebhooks.forEach(function (webhook, index) {
-    var messages = [];
+  statusData.slack.channelWebhooks.forEach((webhook, index) => {
+    let messages = [];
     Logger.log(itemsMarked);
     if (index === 0) {
       messages = buildSlackMessages(
@@ -1668,9 +1666,7 @@ function slackNotifyItems(
       );
     }
 
-    messages = messages.map(function (messageText) {
-      return { text: messageText };
-    });
+    messages = messages.map((messageText) => ({text: messageText}));
     messages[messages.length - 1].attachments = [
       {
         callback_id: "itemNotification",
@@ -1694,9 +1690,7 @@ function slackNotifyItems(
       },
     ];
 
-    messages.forEach(function (message) {
-      sendSlackMessage(message, webhook);
-    });
+    messages.forEach((message) => sendSlackMessage(message, webhook));
   });
 }
 
@@ -1728,7 +1722,7 @@ function buildItemListSlackAttachment(
   action,
   projectColor
 ) {
-  var attachment = {
+  let attachment = {
     type: "button",
     text: "List Items",
     name: OPTS.SLACK.ITEM_LIST_ACTION_NAME,
@@ -1736,7 +1730,7 @@ function buildItemListSlackAttachment(
     value: "",
   };
 
-  var itemListMessage = {
+  let itemListMessage = {
     response_type: "ephemeral",
     replace_original: false,
     text: "Here are all the items that were affected by that action:",
@@ -1745,22 +1739,22 @@ function buildItemListSlackAttachment(
     mrkdwn: true,
   };
 
-  var itemsByCategory = {};
-  items.forEach(function (item) {
+  let itemsByCategory = {};
+  items.forEach((item) => {
     if (!itemsByCategory[item.category]) itemsByCategory[item.category] = [];
     itemsByCategory[item.category].push(item);
   });
 
-  Object.getOwnPropertyNames(itemsByCategory).forEach(function (category) {
-    var categoryAttachment = {
+  Object.getOwnPropertyNames(itemsByCategory).forEach((category) => {
+    let categoryAttachment = {
       author_name: user + " - " + action,
       title: category,
       title_link: projectSheetUrl,
       color: projectColor,
-      fields: itemsByCategory[category].map(function (item) {
-        var totalPrice =
+      fields: itemsByCategory[category].map((item) => {
+        let totalPrice =
           typeof item.totalPrice === "number" ? item.toFixed(2) : "UNKNOWN";
-        var itemField = {
+        let itemField = {
           title: truncateString(item.name, 45),
           value:
             "$" +
@@ -1816,11 +1810,11 @@ function buildItemListSlackAttachment(
  * @returns {?string} String, unless nullIfMissing is specified.
  */
 function getProjectNameFromSheetName(sheetName, nullIfMissing) {
-  var projectsData = SpreadsheetApp.getActiveSpreadsheet()
+  let projectsData = SpreadsheetApp.getActiveSpreadsheet()
     .getRange(OPTS.NAMED_RANGES.PROJECT_NAMES_TO_SHEETS)
     .getValues();
 
-  for (var i = 0; i < projectsData.length; i++) {
+  for (let i = 0; i < projectsData.length; i++) {
     if (projectsData[i][1] === sheetName) return projectsData[i][0];
   }
 
@@ -1835,11 +1829,11 @@ function getProjectNameFromSheetName(sheetName, nullIfMissing) {
  * @returns {?string} String, unless nullIfMissing is specified.
  */
 function getSheetNameFromProjectName(projectName, nullIfMissing) {
-  var projectsData = SpreadsheetApp.getActiveSpreadsheet()
+  let projectsData = SpreadsheetApp.getActiveSpreadsheet()
     .getRange(OPTS.NAMED_RANGES.PROJECT_NAMES_TO_SHEETS)
     .getValues();
 
-  for (var i = 0; i < projectsData.length; i++) {
+  for (let i = 0; i < projectsData.length; i++) {
     if (projectsData[i][0] === projectName) return projectsData[i][1];
   }
 
@@ -1864,8 +1858,8 @@ function markSelectedReceived() {
 
 /** Mark selected items in the sheet as received and request reimbursement. */
 function markSelectedReceivedReimburse() {
-  var ui = SpreadsheetApp.getUi();
-  var response = ui.alert(
+  let ui = SpreadsheetApp.getUi();
+  let response = ui.alert(
     "Confirm",
     'NOTE: Reimbursements are not guarunteed and MUST be preapproved. Items must be received before reimbursement will be sent. If at all possible, items should be purchased by a financial officer. You are required to put your PayPal email address in the "Requestor Comments" field, and only the original item requestor can be reimbursed. Are you sure you want to continue?',
     ui.ButtonSet.OK_CANCEL
@@ -1958,34 +1952,32 @@ function testUpdateItem() {
 function protectRanges() {
   if (!verifyAdmin()) return;
 
-  var sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
-  var financialOfficers = getNamedRangeValues(
+  let sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
+  let financialOfficers = getNamedRangeValues(
     OPTS.NAMED_RANGES.APPROVED_OFFICERS
   );
-  var projectSheetNames = getNamedRangeValues(OPTS.NAMED_RANGES.PROJECT_SHEETS);
-  var admin = getSecretOpts().ADMIN_EMAIL;
-  var userDataSheetName = OPTS.SHEET_NAMES.USERS;
+  let projectSheetNames = getNamedRangeValues(OPTS.NAMED_RANGES.PROJECT_SHEETS);
+  let admin = getSecretOpts().ADMIN_EMAIL;
+  let userDataSheetName = OPTS.SHEET_NAMES.USERS;
 
-  var adminProtectDescription =
+  let adminProtectDescription =
     "This part of the sheet can only be edited by the admin.";
-  var officerProtectDescription =
+  let officerProtectDescription =
     "This part of the sheet can only be edited by Financial Officers.";
 
   SpreadsheetApp.getActiveSpreadsheet()
     .getProtections(SpreadsheetApp.ProtectionType.SHEET)
-    .forEach(function (protection) {
-      protection.remove();
-    });
+    .forEach((protection) => protection.remove());
 
-  sheets.forEach(function (sheet) {
-    var sheetName = sheet.getName();
+  sheets.forEach((sheet) => {
+    let sheetName = sheet.getName();
 
     if (
       projectSheetNames.indexOf(sheetName) === -1 &&
       sheetName !== userDataSheetName
     ) {
       // Lock the entire sheet if not the user data sheet or a project sheet
-      var sheetProtection = sheet.protect();
+      let sheetProtection = sheet.protect();
       sheetProtection.removeEditors(sheetProtection.getEditors());
       sheetProtection.addEditors(financialOfficers);
       successNotification("Updated protections for " + sheetName);
@@ -2000,24 +1992,24 @@ function protectRanges() {
  * @param {string} vendorName
  */
 function openFile(spreadsheet, folder, vendorName) {
-  var vendor =
+  let vendor =
     escapeSpaces(
       encodeURIComponent(escapeSingleQuotes(vendorName.toUpperCase()))
     ) || "VENDOR+NAME";
-  var spreadsheetId = spreadsheet.getId();
-  var folderId = folder.getId();
-  var fileUrl = "https://docs.google.com/spreadsheets/d/" + spreadsheetId;
-  var folderUrl = "https://drive.google.com/drive/u/2/folders/" + folderId;
-  var currentUserEmail = escapeSingleQuotes(
+  let spreadsheetId = spreadsheet.getId();
+  let folderId = folder.getId();
+  let fileUrl = "https://docs.google.com/spreadsheets/d/" + spreadsheetId;
+  let folderUrl = "https://drive.google.com/drive/u/2/folders/" + folderId;
+  let currentUserEmail = escapeSingleQuotes(
     encodeURIComponent(getCurrentUserInfo().email)
   );
-  var emailTemplateLink =
+  let emailTemplateLink =
     "https://mail.google.com/mail/u/0/?view=cm&fs=1&to=sg-rmdpurchase@usf.edu&authuser=" +
     currentUserEmail +
     "&su=SOCIETY+OF+AERONAUTICS+AND+ROCKETRY,+" +
     vendor +
     "&body=Please+see+attached+purchasing+form.&tf=1";
-  var html =
+  let html =
     "<div style='font-family: sans-serif;'>Successfully sent items to sheet.<br><a target='_blank' href='" +
     folderUrl +
     "'>Open Purchasing Sheets Folder</a><br><a target='_blank' href='" +
@@ -2025,7 +2017,7 @@ function openFile(spreadsheet, folder, vendorName) {
     "'>Open The New Purchasing Sheet</a><br /><br /><strong>Remember:</strong> Attach the form to an email sent from your @mail.usf.edu email adress to sg-rmdpurchase@usf.edu with subject \"SOCIETY OF AERONAUTICS AND ROCKETRY, VENDOR NAME, EVENT DATE (if applicable)\". Only one form per email! <br><br> <a  href='" +
     emailTemplateLink +
     "' target='_blank'><strong>Start Email in Gmail</strong></a></div>";
-  var userInterface = HtmlService.createHtmlOutput(html);
+  let userInterface = HtmlService.createHtmlOutput(html);
   SpreadsheetApp.getUi().showModalDialog(userInterface, "Open Sheet");
 }
 
@@ -2048,9 +2040,9 @@ function escapeSpaces(unescaped) {
 /** Send the selected items to a new purchasing sheet. */
 function sendSelectedToSheet() {
   if (!checkIfProjectSheet() || !verifyFinancialOfficer()) return;
-  var selectedRanges = getSelectedRows();
+  let selectedRanges = getSelectedRows();
 
-  var totalRowCount = selectedRanges.reduce(function (total, currentRange) {
+  let totalRowCount = selectedRanges.reduce((total, currentRange) => {
     return total + currentRange;
   }, 0);
   if (totalRowCount > 12 || totalRowCount < 1) {
@@ -2060,31 +2052,31 @@ function sendSelectedToSheet() {
     return;
   }
 
-  var currentSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  let currentSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
 
-  var purchasesFolderId = getNamedRangeValues(
+  let purchasesFolderId = getNamedRangeValues(
     OPTS.NAMED_RANGES.PURCHASING_SHEETS_FOLDER_ID
   )[0];
-  var targetFolder = DriveApp.getFolderById(purchasesFolderId);
+  let targetFolder = DriveApp.getFolderById(purchasesFolderId);
 
-  var currentSheet = currentSpreadsheet.getActiveSheet();
-  var template = currentSpreadsheet.getSheetByName(
+  let currentSheet = currentSpreadsheet.getActiveSheet();
+  let template = currentSpreadsheet.getSheetByName(
     OPTS.SHEET_NAMES.PURCHASING_TEMPLATE
   );
-  var newSheet = template.copyTo(currentSpreadsheet);
+  let newSheet = template.copyTo(currentSpreadsheet);
 
-  var projectSheetName = currentSheet.getSheetName();
-  var projectName = getProjectNameFromSheetName(projectSheetName);
-  var dashboardSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(
+  let projectSheetName = currentSheet.getSheetName();
+  let projectName = getProjectNameFromSheetName(projectSheetName);
+  let dashboardSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(
     projectSheetName + " Dashboard"
   );
-  var projectDescription = dashboardSheet
+  let projectDescription = dashboardSheet
     .getRange(
       OPTS.DASHBOARD_CELLS.PROJECT_DESCRIPTION.row,
       OPTS.DASHBOARD_CELLS.PROJECT_DESCRIPTION.column
     )
     .getValue();
-  var officer = getCurrentUserInfo();
+  let officer = getCurrentUserInfo();
   newSheet.getRange("I6").setValue(officer.fullName);
   newSheet.getRange("I7").setValue(officer.email);
   newSheet.getRange("I8").setValue(officer.phone);
@@ -2092,32 +2084,32 @@ function sendSelectedToSheet() {
   newSheet.getRange("F14").setValue(projectName);
   newSheet.getRange("A21").setValue(projectDescription);
 
-  var needBy = moment().add(2, "weeks").format("MM/DD/YY");
+  let needBy = moment().add(2, "weeks").format("MM/DD/YY");
   newSheet.getRange("M38").setValue(needBy);
 
-  var vendor = selectedRanges[0].getValues()[0][
+  let vendor = selectedRanges[0].getValues()[0][
     OPTS.ITEM_COLUMNS.SUPPLIER.index - 1
   ];
   newSheet.getRange("J42").setValue(vendor);
 
-  var allHaveSameVendor = true;
-  var allNew = true;
-  var index = 50;
-  selectedRanges.forEach(function (range) {
-    range.getValues().forEach(function (row) {
+  let allHaveSameVendor = true;
+  let allNew = true;
+  let index = 50;
+  selectedRanges.forEach((range) => {
+    range.getValues().forEach((row) => {
       if (row[OPTS.ITEM_COLUMNS.SUPPLIER.index - 1] !== vendor) {
         allHaveSameVendor = false;
       }
       if (row[OPTS.ITEM_COLUMNS.STATUS.index - 1] !== STATUSES_DATA.NEW.text) {
         allNew = false;
       }
-      var itemName = row[OPTS.ITEM_COLUMNS.NAME.index - 1];
+      let itemName = row[OPTS.ITEM_COLUMNS.NAME.index - 1];
       newSheet.getRange(index, 2).setValue(itemName);
-      var link = row[OPTS.ITEM_COLUMNS.LINK.index - 1];
+      let link = row[OPTS.ITEM_COLUMNS.LINK.index - 1];
       newSheet.getRange(index, 8).setValue(link);
-      var qty = row[OPTS.ITEM_COLUMNS.QUANTITY.index - 1];
+      let qty = row[OPTS.ITEM_COLUMNS.QUANTITY.index - 1];
       newSheet.getRange(index, 13).setValue(qty);
-      var unitPrice = row[OPTS.ITEM_COLUMNS.UNIT_PRICE.index - 1];
+      let unitPrice = row[OPTS.ITEM_COLUMNS.UNIT_PRICE.index - 1];
       newSheet.getRange(index, 15).setValue(unitPrice);
       index++;
     });
@@ -2135,13 +2127,13 @@ function sendSelectedToSheet() {
     return;
   }
 
-  var sheetName =
+  let sheetName =
     moment().format("YY-MM-DD") + " - " + projectName + " - " + vendor;
   newSheet.setName(sheetName);
 
-  var newSpreadsheet = SpreadsheetApp.create(sheetName);
-  var file = DriveApp.getFileById(newSpreadsheet.getId());
-  var parents = file.getParents();
+  let newSpreadsheet = SpreadsheetApp.create(sheetName);
+  let file = DriveApp.getFileById(newSpreadsheet.getId());
+  let parents = file.getParents();
   while (parents.hasNext()) {
     parents.next().removeFile(file);
   }
