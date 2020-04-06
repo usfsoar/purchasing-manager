@@ -5,15 +5,6 @@
  */
 
 /**
- * Secret values. DO NOT PUSH TO GITHUB.
- * @constant
- * @readonly
- * @global
- * @type {Object}
- */
-var SECRET_OPTS = getSecretOpts();
-
-/**
  * Global options object.
  * @constant
  * @readonly
@@ -207,7 +198,7 @@ var STATUSES_DATA = {
       messageTemplates: [
         "{emoji} {userTags} {userFullName} has submitted {numMarked} new item{plural} to be purchased for {projectName}."
       ],
-      channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING]
+      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING]
     },
     columns: {
       user: OPTS.ITEM_COLUMNS.REQUEST_EMAIL,
@@ -239,7 +230,7 @@ var STATUSES_DATA = {
       messageTemplates: [
         "{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *submitted* to Student Government."
       ],
-      channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING]
+      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING]
     },
     columns: {
       user: OPTS.ITEM_COLUMNS.OFFICER_EMAIL,
@@ -266,7 +257,7 @@ var STATUSES_DATA = {
       messageTemplates: [
         "{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *ordered*."
       ],
-      channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING]
+      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING]
     },
     columns: {
       user: null,
@@ -294,7 +285,7 @@ var STATUSES_DATA = {
           OPTS.SLACK.CHECK_MARK_EMOJI +
           " if you're going to pick them up._"
       ],
-      channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING]
+      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING]
     },
     columns: {
       user: null,
@@ -324,7 +315,7 @@ var STATUSES_DATA = {
       messageTemplates: [
         "{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as received (picked up)."
       ],
-      channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING]
+      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING]
     },
     columns: {
       user: OPTS.ITEM_COLUMNS.receive_EMAIL,
@@ -354,7 +345,7 @@ var STATUSES_DATA = {
       messageTemplates: [
         "{emoji} {userTags} {userFullName} *denied* {numMarked} item{plural} for {projectName} (_see comments in database_)."
       ],
-      channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING]
+      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING]
     },
     columns: {
       user: OPTS.ITEM_COLUMNS.OFFICER_EMAIL,
@@ -380,7 +371,7 @@ var STATUSES_DATA = {
       messageTemplates: [
         "{emoji} {userTags} {userFullName} requested more info for {numMarked} item{plural} for {projectName} (_see comments in database_). Update the information, then resubmit as new items."
       ],
-      channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING]
+      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING]
     },
     columns: {
       user: OPTS.ITEM_COLUMNS.OFFICER_EMAIL,
@@ -414,7 +405,7 @@ var STATUSES_DATA = {
       messageTemplates: [
         "{emoji} {userTags} {userFullName} marked {numMarked} item{plural} as received for {projectName} and requested reimbursement for them."
       ],
-      channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING]
+      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING]
     },
     columns: {
       date: OPTS.ITEM_COLUMNS.receive_DATE
@@ -444,7 +435,7 @@ var STATUSES_DATA = {
       messageTemplates: [
         "{emoji} {userTags} {userFullName} sent reimbursement for {numMarked} item{plural}."
       ],
-      channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING]
+      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING]
     },
     columns: {
       date: OPTS.ITEM_COLUMNS.UPDATE_DATE
@@ -476,7 +467,7 @@ var TEST_STATUS = {
     messageTemplates: [
       "{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *test* by TEsting."
     ],
-    channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.DEV]
+    channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.DEV]
   },
   columns: {
     user: null,
@@ -975,7 +966,7 @@ function verifyFinancialOfficer(email) {
  * @returns {boolean} true if the current user is an admin.
  */
 function verifyAdmin() {
-  if (Session.getActiveUser().getEmail() === SECRET_OPTS.ADMIN_EMAIL)
+  if (Session.getActiveUser().getEmail() === getSecretOpts().ADMIN_EMAIL)
     return true;
   return false;
 }
@@ -1968,7 +1959,7 @@ function protectRanges() {
     OPTS.NAMED_RANGES.APPROVED_OFFICERS
   );
   var projectSheetNames = getNamedRangeValues(OPTS.NAMED_RANGES.PROJECT_SHEETS);
-  var admin = SECRET_OPTS.ADMIN_EMAIL;
+  var admin = getSecretOpts().ADMIN_EMAIL;
   var userDataSheetName = OPTS.SHEET_NAMES.USERS;
 
   var adminProtectDescription =
