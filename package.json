@@ -5,7 +5,8 @@
   "main": "Code.gs",
   "dependencies": {},
   "devDependencies": {
-    "@types/google-apps-script": "0.0.62"
+    "@types/google-apps-script": "0.0.62",
+    "eslint-config-google": "^0.14.0"
   },
   "scripts": {
     "push": "clasp push",
