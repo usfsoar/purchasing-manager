@@ -25,14 +25,14 @@ var OPTS = {
     PROJECT_NAMES_TO_SHEETS: "ProjectNamesToSheets",
     STATUSES: "Statuses",
     /** Range containing the ID of the purchasing sheets folder. 1 cell. */
-    PURCHASING_SHEETS_FOLDER_ID: "PurchasingSheetsFolderID"
+    PURCHASING_SHEETS_FOLDER_ID: "PurchasingSheetsFolderID",
   },
   /** Custom Menu info. */
   CUSTOM_MENU: {
-    NAME: "SOAR Purchasing"
+    NAME: "SOAR Purchasing",
   },
   FAST_FORWARD_MENU: {
-    NAME: "Fast-Forward"
+    NAME: "Fast-Forward",
   },
   /** The number of header rows in the project sheets. */
   NUM_HEADER_ROWS: 2,
@@ -62,7 +62,7 @@ var OPTS = {
     UPDATE_DATE: { index: 19, name: "Update Date" },
     ARRIVE_DATE: { index: 20, name: "Arrival Date" },
     receive_EMAIL: { index: 21, name: "receive Date" },
-    receive_DATE: { index: 22, name: "receiver Email" }
+    receive_DATE: { index: 22, name: "receiver Email" },
   },
   /** Options relating to the user interface. */
   UI: {
@@ -72,37 +72,37 @@ var OPTS = {
       ERROR: "Error!",
       SUCCESS: "Completed",
       WARNING: "Alert!",
-      INFO: "Note"
+      INFO: "Note",
     },
     SLACK_ID_PROMPT:
       "Looks like this is your first time using the SOAR purchasing database. Please enter your Slack Member ID # (NOT your username!) found in your Slack profile, in the dropdown menu. For more details, see detailed instructions at:\nhttps://drive.google.com/open?id=1Q1PleYhE1i0A5VFyjKqyLswom3NQuXcn.",
     FULL_NAME_PROMPT:
-      "Great, thank you! Please also enter your full name. You won't have to do this next time."
+      "Great, thank you! Please also enter your full name. You won't have to do this next time.",
   },
   /** Default values for items. */
   DEFAULT_VALUES: {
     ACCOUNT_NAME: getNamedRangeValues("Accounts")[0],
-    CATEGORY: "Uncategorized"
+    CATEGORY: "Uncategorized",
   },
   /** Names of sheets in the Spreadsheet */
   SHEET_NAMES: {
     USERS: "Users",
     PURCHASING_TEMPLATE: "Purchasing Sheet Template",
-    MAIN_DASHBOARD: "Main Dashboard"
+    MAIN_DASHBOARD: "Main Dashboard",
   },
   DASHBOARD_CELLS: {
     TOTAL_BUDGET: {
       row: 4, // 1-based index!
-      column: 3
+      column: 3,
     },
     TOTAL_EXPENSES: {
       row: 4,
-      column: 4
+      column: 4,
     },
     PROJECT_DESCRIPTION: {
       row: 11,
-      column: 3
-    }
+      column: 3,
+    },
   },
   /** Slack API pieces */
   SLACK: {
@@ -121,16 +121,16 @@ var OPTS = {
        */
       REQUESTORS: "REQUESTORS",
       /** Just all the listed Financial Officers. */
-      OFFICERS: "OFFICERS"
+      OFFICERS: "OFFICERS",
     },
     STATUS_SLASH_COMMAND: "budgetstatus",
     ITEM_LIST_ACTION_NAME_LEGACY: "listItems",
     ITEM_LIST_ACTION_NAME: "showItemList",
     SOAR_ICON:
-      "http://www.usfsoar.com/wp-content/uploads/2018/09/595bae9a-c1f9-4b46-880e-dc6d4e1d0dac.png"
+      "http://www.usfsoar.com/wp-content/uploads/2018/09/595bae9a-c1f9-4b46-880e-dc6d4e1d0dac.png",
   },
   /** Number of adjacent officer columns in the project sheets. */
-  NUM_OFFICER_COLS: 7
+  NUM_OFFICER_COLS: 7,
 };
 
 /**
@@ -180,9 +180,9 @@ var STATUSES_DATA = {
     slack: {},
     columns: {
       user: null,
-      date: null
+      date: null,
     },
-    officersOnly: false
+    officersOnly: false,
   },
   NEW: {
     text: "New",
@@ -190,92 +190,92 @@ var STATUSES_DATA = {
     actionText: {
       fastForward: "New",
       selected: "Submit selected new items",
-      all: "Submit all new items"
+      all: "Submit all new items",
     },
     slack: {
       emoji: ":new:",
       targetUsers: OPTS.SLACK.TARGET_USERS.OFFICERS,
       messageTemplates: [
-        "{emoji} {userTags} {userFullName} has submitted {numMarked} new item{plural} to be purchased for {projectName}."
+        "{emoji} {userTags} {userFullName} has submitted {numMarked} new item{plural} to be purchased for {projectName}.",
       ],
-      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING]
+      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       user: OPTS.ITEM_COLUMNS.REQUEST_EMAIL,
-      date: OPTS.ITEM_COLUMNS.REQUEST_DATE
+      date: OPTS.ITEM_COLUMNS.REQUEST_DATE,
     },
     fastForwardColumns: {
       user: [],
-      date: []
+      date: [],
     },
     requiredColumns: [
       OPTS.ITEM_COLUMNS.NAME,
       OPTS.ITEM_COLUMNS.SUPPLIER,
       OPTS.ITEM_COLUMNS.UNIT_PRICE,
       OPTS.ITEM_COLUMNS.QUANTITY,
-      OPTS.ITEM_COLUMNS.CATEGORY
+      OPTS.ITEM_COLUMNS.CATEGORY,
     ],
-    officersOnly: false
+    officersOnly: false,
   },
   SUBMITTED: {
     text: "Submitted",
     allowedPrevious: ["New"],
     actionText: {
       fastForward: "Submitted",
-      selected: "Mark selected items as submitted"
+      selected: "Mark selected items as submitted",
     },
     slack: {
       emoji: ":usf:",
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        "{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *submitted* to Student Government."
+        "{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *submitted* to Student Government.",
       ],
-      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING]
+      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       user: OPTS.ITEM_COLUMNS.OFFICER_EMAIL,
-      date: OPTS.ITEM_COLUMNS.SUBMIT_DATE
+      date: OPTS.ITEM_COLUMNS.SUBMIT_DATE,
     },
     fastForwardColumns: {
       user: [OPTS.ITEM_COLUMNS.REQUEST_EMAIL],
-      date: [OPTS.ITEM_COLUMNS.REQUEST_DATE]
+      date: [OPTS.ITEM_COLUMNS.REQUEST_DATE],
     },
     reccomendedColumns: [OPTS.ITEM_COLUMNS.ACCOUNT, OPTS.ITEM_COLUMNS.CATEGORY],
     fillInDefaults: true,
-    officersOnly: true
+    officersOnly: true,
   },
   APPROVED: {
     text: "Ordered",
     allowedPrevious: ["Submitted", "New"],
     actionText: {
       fastForward: "Ordered",
-      selected: "Mark selected items as ordered"
+      selected: "Mark selected items as ordered",
     },
     slack: {
       emoji: ":white_check_mark:",
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        "{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *ordered*."
+        "{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *ordered*.",
       ],
-      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING]
+      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       user: null,
-      date: OPTS.ITEM_COLUMNS.UPDATE_DATE
+      date: OPTS.ITEM_COLUMNS.UPDATE_DATE,
     },
     fastForwardColumns: {
       user: [OPTS.ITEM_COLUMNS.REQUEST_EMAIL, OPTS.ITEM_COLUMNS.OFFICER_EMAIL],
-      date: [OPTS.ITEM_COLUMNS.REQUEST_DATE, OPTS.ITEM_COLUMNS.SUBMIT_DATE]
+      date: [OPTS.ITEM_COLUMNS.REQUEST_DATE, OPTS.ITEM_COLUMNS.SUBMIT_DATE],
     },
     fillInDefaults: true,
-    officersOnly: true
+    officersOnly: true,
   },
   AWAITING_PICKUP: {
     text: "Awaiting Pickup",
     allowedPrevious: ["Submitted", "Ordered"],
     actionText: {
       fastForward: "Awaiting Pickup",
-      selected: "Mark selected items as awaiting pickup"
+      selected: "Mark selected items as awaiting pickup",
     },
     slack: {
       emoji: ":package:",
@@ -283,43 +283,13 @@ var STATUSES_DATA = {
       messageTemplates: [
         "{emoji} {userFullName} marked {numMarked} item{plural} for {projectName} as awaiting pickup (usually in MSC 4300). _React with " +
           OPTS.SLACK.CHECK_MARK_EMOJI +
-          " if you're going to pick them up._"
+          " if you're going to pick them up._",
       ],
-      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING]
+      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       user: null,
-      date: OPTS.ITEM_COLUMNS.ARRIVE_DATE
-    },
-    fastForwardColumns: {
-      user: [OPTS.ITEM_COLUMNS.REQUEST_EMAIL, OPTS.ITEM_COLUMNS.OFFICER_EMAIL],
-      date: [
-        OPTS.ITEM_COLUMNS.REQUEST_DATE,
-        OPTS.ITEM_COLUMNS.SUBMIT_DATE,
-        OPTS.ITEM_COLUMNS.UPDATE_DATE
-      ]
-    },
-    fillInDefaults: true,
-    officersOnly: true
-  },
-  RECEIVED: {
-    text: "Received",
-    allowedPrevious: ["Awaiting Pickup", "Submitted", "Ordered"],
-    actionText: {
-      fastForward: "Received",
-      selected: "Mark selected items as received (picked up)"
-    },
-    slack: {
-      emoji: ":heavy_check_mark:",
-      targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
-      messageTemplates: [
-        "{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as received (picked up)."
-      ],
-      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING]
-    },
-    columns: {
-      user: OPTS.ITEM_COLUMNS.receive_EMAIL,
-      date: OPTS.ITEM_COLUMNS.receive_DATE
+      date: OPTS.ITEM_COLUMNS.ARRIVE_DATE,
     },
     fastForwardColumns: {
       user: [OPTS.ITEM_COLUMNS.REQUEST_EMAIL, OPTS.ITEM_COLUMNS.OFFICER_EMAIL],
@@ -327,62 +297,92 @@ var STATUSES_DATA = {
         OPTS.ITEM_COLUMNS.REQUEST_DATE,
         OPTS.ITEM_COLUMNS.SUBMIT_DATE,
         OPTS.ITEM_COLUMNS.UPDATE_DATE,
-        OPTS.ITEM_COLUMNS.ARRIVE_DATE
-      ]
+      ],
     },
-    officersOnly: false
+    fillInDefaults: true,
+    officersOnly: true,
+  },
+  RECEIVED: {
+    text: "Received",
+    allowedPrevious: ["Awaiting Pickup", "Submitted", "Ordered"],
+    actionText: {
+      fastForward: "Received",
+      selected: "Mark selected items as received (picked up)",
+    },
+    slack: {
+      emoji: ":heavy_check_mark:",
+      targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
+      messageTemplates: [
+        "{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as received (picked up).",
+      ],
+      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
+    },
+    columns: {
+      user: OPTS.ITEM_COLUMNS.receive_EMAIL,
+      date: OPTS.ITEM_COLUMNS.receive_DATE,
+    },
+    fastForwardColumns: {
+      user: [OPTS.ITEM_COLUMNS.REQUEST_EMAIL, OPTS.ITEM_COLUMNS.OFFICER_EMAIL],
+      date: [
+        OPTS.ITEM_COLUMNS.REQUEST_DATE,
+        OPTS.ITEM_COLUMNS.SUBMIT_DATE,
+        OPTS.ITEM_COLUMNS.UPDATE_DATE,
+        OPTS.ITEM_COLUMNS.ARRIVE_DATE,
+      ],
+    },
+    officersOnly: false,
   },
   DENIED: {
     text: "Denied",
     allowedPrevious: ["New", "Submitted", "Ordered", "Awaiting Info"],
     actionText: {
       fastForward: "Denied",
-      selected: "Deny selected items"
+      selected: "Deny selected items",
     },
     slack: {
       emoji: ":x:",
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        "{emoji} {userTags} {userFullName} *denied* {numMarked} item{plural} for {projectName} (_see comments in database_)."
+        "{emoji} {userTags} {userFullName} *denied* {numMarked} item{plural} for {projectName} (_see comments in database_).",
       ],
-      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING]
+      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       user: OPTS.ITEM_COLUMNS.OFFICER_EMAIL,
-      date: OPTS.ITEM_COLUMNS.UPDATE_DATE
+      date: OPTS.ITEM_COLUMNS.UPDATE_DATE,
     },
     fastForwardColumns: {
       user: [OPTS.ITEM_COLUMNS.REQUEST_EMAIL],
-      date: [OPTS.ITEM_COLUMNS.REQUEST_DATE]
+      date: [OPTS.ITEM_COLUMNS.REQUEST_DATE],
     },
     requiredColumns: [OPTS.ITEM_COLUMNS.OFFICER_COMMENTS],
-    officersOnly: true
+    officersOnly: true,
   },
   AWAITING_INFO: {
     text: "Awaiting Info",
     allowedPrevious: ["New", "Submitted", "Denied", "Ordered", "Received"],
     actionText: {
       fastForward: "Awaiting Info",
-      selected: "Request more information for selected items"
+      selected: "Request more information for selected items",
     },
     slack: {
       emoji: ":exclamation:",
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        "{emoji} {userTags} {userFullName} requested more info for {numMarked} item{plural} for {projectName} (_see comments in database_). Update the information, then resubmit as new items."
+        "{emoji} {userTags} {userFullName} requested more info for {numMarked} item{plural} for {projectName} (_see comments in database_). Update the information, then resubmit as new items.",
       ],
-      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING]
+      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
       user: OPTS.ITEM_COLUMNS.OFFICER_EMAIL,
-      date: OPTS.ITEM_COLUMNS.UPDATE_DATE
+      date: OPTS.ITEM_COLUMNS.UPDATE_DATE,
     },
     fastForwardColumns: {
       user: [OPTS.ITEM_COLUMNS.REQUEST_EMAIL],
-      date: [OPTS.ITEM_COLUMNS.REQUEST_DATE]
+      date: [OPTS.ITEM_COLUMNS.REQUEST_DATE],
     },
     requiredColumns: [OPTS.ITEM_COLUMNS.OFFICER_COMMENTS],
-    officersOnly: true
+    officersOnly: true,
   },
   RECEIVED_REIMBURSE: {
     text: "Received - Awaiting Reimbursement",
@@ -393,22 +393,22 @@ var STATUSES_DATA = {
       "Ordered",
       "Received",
       "Awaiting Pickup",
-      "Awaiting Info"
+      "Awaiting Info",
     ],
     actionText: {
       fastForward: "Received - Awaiting Reimbursement",
-      selected: "Mark selected items received and request reimbursement"
+      selected: "Mark selected items received and request reimbursement",
     },
     slack: {
       emoji: ":heavy_dollar_sign:",
       targetUsers: OPTS.SLACK.TARGET_USERS.OFFICERS,
       messageTemplates: [
-        "{emoji} {userTags} {userFullName} marked {numMarked} item{plural} as received for {projectName} and requested reimbursement for them."
+        "{emoji} {userTags} {userFullName} marked {numMarked} item{plural} as received for {projectName} and requested reimbursement for them.",
       ],
-      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING]
+      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
-      date: OPTS.ITEM_COLUMNS.receive_DATE
+      date: OPTS.ITEM_COLUMNS.receive_DATE,
     },
     requiredColumns: [OPTS.ITEM_COLUMNS.REQUEST_COMMENTS],
     officersOnly: false,
@@ -418,27 +418,27 @@ var STATUSES_DATA = {
         OPTS.ITEM_COLUMNS.REQUEST_DATE,
         OPTS.ITEM_COLUMNS.SUBMIT_DATE,
         OPTS.ITEM_COLUMNS.UPDATE_DATE,
-        OPTS.ITEM_COLUMNS.ARRIVE_DATE
-      ]
-    }
+        OPTS.ITEM_COLUMNS.ARRIVE_DATE,
+      ],
+    },
   },
   REIMBURSED: {
     text: "Reimbursed",
     allowedPrevious: ["Received - Awaiting Reimbursement", "Received"],
     actionText: {
       fastForward: "Reimbursed",
-      selected: "Mark selected items as reimbursed"
+      selected: "Mark selected items as reimbursed",
     },
     slack: {
       emoji: ":money_with_wings:",
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        "{emoji} {userTags} {userFullName} sent reimbursement for {numMarked} item{plural}."
+        "{emoji} {userTags} {userFullName} sent reimbursement for {numMarked} item{plural}.",
       ],
-      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING]
+      channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.PURCHASING],
     },
     columns: {
-      date: OPTS.ITEM_COLUMNS.UPDATE_DATE
+      date: OPTS.ITEM_COLUMNS.UPDATE_DATE,
     },
     requiredColumns: [],
     officersOnly: true,
@@ -448,10 +448,10 @@ var STATUSES_DATA = {
         OPTS.ITEM_COLUMNS.REQUEST_DATE,
         OPTS.ITEM_COLUMNS.SUBMIT_DATE,
         OPTS.ITEM_COLUMNS.UPDATE_DATE,
-        OPTS.ITEM_COLUMNS.ARRIVE_DATE
-      ]
-    }
-  }
+        OPTS.ITEM_COLUMNS.ARRIVE_DATE,
+      ],
+    },
+  },
 };
 
 var TEST_STATUS = {
@@ -459,26 +459,26 @@ var TEST_STATUS = {
   allowedPrevious: ["", "Test"],
   actionText: {
     fastForward: "Test",
-    selected: "Test update item"
+    selected: "Test update item",
   },
   slack: {
     emoji: ":checkered_flag:",
     targetUsers: OPTS.SLACK.TARGET_USERS.CHANNEL,
     messageTemplates: [
-      "{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *test* by TEsting."
+      "{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *test* by TEsting.",
     ],
-    channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.DEV]
+    channelWebhooks: [getSecretOpts().SLACK.WEBHOOKS.DEV],
   },
   columns: {
     user: null,
-    date: OPTS.ITEM_COLUMNS.UPDATE_DATE
+    date: OPTS.ITEM_COLUMNS.UPDATE_DATE,
   },
   fastForwardColumns: {
     user: [OPTS.ITEM_COLUMNS.REQUEST_EMAIL, OPTS.ITEM_COLUMNS.OFFICER_EMAIL],
-    date: [OPTS.ITEM_COLUMNS.REQUEST_DATE, OPTS.ITEM_COLUMNS.SUBMIT_DATE]
+    date: [OPTS.ITEM_COLUMNS.REQUEST_DATE, OPTS.ITEM_COLUMNS.SUBMIT_DATE],
   },
   fillInDefaults: true,
-  officersOnly: true
+  officersOnly: true,
 };
 
 // Handle post request from Slack
@@ -486,7 +486,7 @@ function doPost(e) {
   var message = {
     response_type: "ephemeral",
     replace_original: false,
-    text: "Error: command not found."
+    text: "Error: command not found.",
   };
 
   if (e.parameter.command == "/budgetstatus") {
@@ -507,7 +507,7 @@ function doPost(e) {
         message = {
           response_type: "ephemeral",
           replace_original: false,
-          text: parsedText
+          text: parsedText,
         };
       } else {
         console.log("so far so good...");
@@ -571,18 +571,18 @@ function buildSlackMessages(
         /** Array of booleans with indexes that match officers. Only false if NO. */
         var officerNotifyOptions = getNamedRangeValues(
           OPTS.NAMED_RANGES.NOTIFY_APPROVED_OFFICERS
-        ).map(function(value) {
+        ).map(function (value) {
           return value !== "NO";
         });
         /** Emails of all the officers that do get notified. */
         var officerEmails = getNamedRangeValues(
           OPTS.NAMED_RANGES.APPROVED_OFFICERS
-        ).filter(function(email, index) {
+        ).filter(function (email, index) {
           return officerNotifyOptions[index];
         });
         var officerUserTags = officerEmails
           .map(getSlackTagByEmail)
-          .filter(function(slackTag) {
+          .filter(function (slackTag) {
             return slackTag != "";
           });
         targetUserTagsString = makeListFromArray(officerUserTags, "or");
@@ -621,7 +621,7 @@ function buildProjectStatusSlackMessage(project) {
   if (!checkIfProjectSheet(projectSheetName))
     return {
       response_type: "ephemeral",
-      text: "Sorry, I don't recognize that project."
+      text: "Sorry, I don't recognize that project.",
     };
   var projectName = getProjectNameFromSheetName(project);
 
@@ -683,23 +683,23 @@ function buildProjectStatusSlackMessage(project) {
           {
             title: "Total Budget",
             value: "$" + totalBudget.toFixed(2),
-            short: true
+            short: true,
           },
           {
             title: "Percent Remaining",
             value: percentBudgetRemaining + "%",
-            short: true
+            short: true,
           },
           {
             title: "Total Expenses",
             value: "$" + totalExpenses.toFixed(2),
-            short: true
+            short: true,
           },
           {
             title: "Amount Remaining",
             value: "$" + budgetRemaining,
-            short: true
-          }
+            short: true,
+          },
         ],
         footer: "SOAR Purchasing Database",
         footer_icon: OPTS.SLACK.SOAR_ICON,
@@ -708,16 +708,16 @@ function buildProjectStatusSlackMessage(project) {
           {
             type: "button",
             text: "Open Dashboard ↗",
-            url: dashboardSheetUrl
+            url: dashboardSheetUrl,
           },
           {
             type: "button",
             text: "Open Purchasing Sheet ↗",
-            url: projectSheetUrl
-          }
-        ]
-      }
-    ]
+            url: projectSheetUrl,
+          },
+        ],
+      },
+    ],
   };
 }
 
@@ -739,7 +739,7 @@ function getNamedRangeValues(rangeName) {
     .getValues();
 
   // Flatten and remove empty values
-  var valuesArray = [].concat.apply([], valuesGrid).filter(function(value) {
+  var valuesArray = [].concat.apply([], valuesGrid).filter(function (value) {
     return value !== "";
   });
 
@@ -901,17 +901,17 @@ function successNotification(message) {
  * @returns {{slackId:string,fullName:string,email:string,isFinancialOfficer:boolean,phone?:string}}
  * Information about the user.
  */
-var getCurrentUserInfo = (function() {
+var getCurrentUserInfo = (function () {
   var currentEmail = Session.getActiveUser().getEmail();
   var cache = {
     slackId: /** @type {?string} */ (null),
     fullName: /** @type {?string} */ (null),
     isFinancialOfficer: verifyFinancialOfficer(currentEmail),
     email: currentEmail,
-    phone: /** @type {?string} */ (null)
+    phone: /** @type {?string} */ (null),
   };
 
-  return function() {
+  return function () {
     if (
       cache.email !== null &&
       (cache.slackId === null || cache.fullName == null)
@@ -1023,7 +1023,7 @@ function makeListFromArray(listArray, conjunction, noOxfordComma) {
   var oxfordComma = noOxfordComma || listArray.length <= 2 ? "" : ",";
   conjunction = conjunction === undefined ? "and" : conjunction;
 
-  return listArray.reduce(function(finalString, listItem, index) {
+  return listArray.reduce(function (finalString, listItem, index) {
     switch (index) {
       case 0:
         return listItem;
@@ -1064,14 +1064,11 @@ function truncateString(longString, chars, pad, padOnly) {
  */
 function getSelectedRows() {
   var activeSheet = SpreadsheetApp.getActiveSheet();
-  var selections = activeSheet
-    .getSelection()
-    .getActiveRangeList()
-    .getRanges();
+  var selections = activeSheet.getSelection().getActiveRangeList().getRanges();
   var lastColumn = activeSheet.getLastColumn();
 
   // Expand selections to width of spreadsheet
-  var expandedSelections = selections.map(function(selectionRange) {
+  var expandedSelections = selections.map(function (selectionRange) {
     var selectionStartRow = selectionRange.getRow();
     var selectionNumRows = selectionRange.getNumRows();
     if (selectionStartRow === 1) {
@@ -1109,7 +1106,7 @@ function getAllRows() {
   /** The number of the last row in the sheet that has a value for Name. */
   var lastRowWithData = firstNonHeaderRow;
 
-  nameColumnValues.forEach(function(name, index) {
+  nameColumnValues.forEach(function (name, index) {
     if (name.toString().trim() !== "")
       lastRowWithData = index + firstNonHeaderRow;
   });
@@ -1122,7 +1119,7 @@ function getAllRows() {
       1,
       numNonHeaderRowsWithData,
       lastColumnInSheet
-    )
+    ),
   ];
 }
 
@@ -1340,7 +1337,7 @@ function markItems(newStatus, markAll) {
             rangeValues[l][OPTS.ITEM_COLUMNS.OFFICER_COMMENTS.index - 1],
           supplier: rangeValues[l][OPTS.ITEM_COLUMNS.SUPPLIER.index - 1],
           productNum: rangeValues[l][OPTS.ITEM_COLUMNS.PRODUCT_NUM.index - 1],
-          link: rangeValues[l][OPTS.ITEM_COLUMNS.LINK.index - 1]
+          link: rangeValues[l][OPTS.ITEM_COLUMNS.LINK.index - 1],
         });
       }
     }
@@ -1431,16 +1428,16 @@ function fastForwardItems(newStatus) {
     pastDateColumns,
     pastUserColumnsValues,
     pastDateColumnsValues;
-  pastUserColumns = newStatus.fastForwardColumns.user.map(function(ffCol) {
+  pastUserColumns = newStatus.fastForwardColumns.user.map(function (ffCol) {
     return getColumnRange(ffCol.index);
   });
-  pastDateColumns = newStatus.fastForwardColumns.date.map(function(ffCol) {
+  pastDateColumns = newStatus.fastForwardColumns.date.map(function (ffCol) {
     return getColumnRange(ffCol.index);
   });
-  pastUserColumnsValues = pastUserColumns.map(function(colRange) {
+  pastUserColumnsValues = pastUserColumns.map(function (colRange) {
     return colRange.getValues();
   });
-  pastDateColumnsValues = pastDateColumns.map(function(colRange) {
+  pastDateColumnsValues = pastDateColumns.map(function (colRange) {
     return colRange.getValues();
   });
 
@@ -1483,12 +1480,12 @@ function fastForwardItems(newStatus) {
       }
 
       // If any of the past columns are blank, fill them in with current info
-      pastUserColumnsValues.forEach(function(columnValues) {
+      pastUserColumnsValues.forEach(function (columnValues) {
         if (columnValues[currentValuesRowIndex][0].toString() === "") {
           columnValues[currentValuesRowIndex][0] = currentOfficerEmail;
         }
       });
-      pastDateColumnsValues.forEach(function(columnValues) {
+      pastDateColumnsValues.forEach(function (columnValues) {
         if (columnValues[currentValuesRowIndex][0].toString() === "") {
           columnValues[currentValuesRowIndex][0] = currentDate;
         }
@@ -1509,10 +1506,10 @@ function fastForwardItems(newStatus) {
     categoryColumn.setValues(categoryColumnValues);
   }
 
-  pastUserColumns.forEach(function(columnRange, index) {
+  pastUserColumns.forEach(function (columnRange, index) {
     columnRange.setValues(pastUserColumnsValues[index]);
   });
-  pastDateColumns.forEach(function(columnRange, index) {
+  pastDateColumns.forEach(function (columnRange, index) {
     columnRange.setValues(pastDateColumnsValues[index]);
   });
 
@@ -1611,7 +1608,7 @@ function sendSlackMessage(messageData, webhook) {
   var requestOptions = {
     method: "post",
     payload: JSON.stringify(messageData),
-    contentType: "application/json"
+    contentType: "application/json",
   };
   UrlFetchApp.fetch(webhook, requestOptions);
 }
@@ -1647,7 +1644,7 @@ function slackNotifyItems(
   projectSheetUrl,
   projectColor
 ) {
-  statusData.slack.channelWebhooks.forEach(function(webhook, index) {
+  statusData.slack.channelWebhooks.forEach(function (webhook, index) {
     var messages = [];
     Logger.log(itemsMarked);
     if (index === 0) {
@@ -1671,7 +1668,7 @@ function slackNotifyItems(
       );
     }
 
-    messages = messages.map(function(messageText) {
+    messages = messages.map(function (messageText) {
       return { text: messageText };
     });
     messages[messages.length - 1].attachments = [
@@ -1690,14 +1687,14 @@ function slackNotifyItems(
           {
             type: "button",
             text: "Open Sheet ↗",
-            url: projectSheetUrl
-          }
+            url: projectSheetUrl,
+          },
         ],
-        color: projectColor
-      }
+        color: projectColor,
+      },
     ];
 
-    messages.forEach(function(message) {
+    messages.forEach(function (message) {
       sendSlackMessage(message, webhook);
     });
   });
@@ -1736,7 +1733,7 @@ function buildItemListSlackAttachment(
     text: "List Items",
     name: OPTS.SLACK.ITEM_LIST_ACTION_NAME,
     /** JSON to parse as return message later */
-    value: ""
+    value: "",
   };
 
   var itemListMessage = {
@@ -1745,22 +1742,22 @@ function buildItemListSlackAttachment(
     text: "Here are all the items that were affected by that action:",
     attachments: [],
     parse: "full",
-    mrkdwn: true
+    mrkdwn: true,
   };
 
   var itemsByCategory = {};
-  items.forEach(function(item) {
+  items.forEach(function (item) {
     if (!itemsByCategory[item.category]) itemsByCategory[item.category] = [];
     itemsByCategory[item.category].push(item);
   });
 
-  Object.getOwnPropertyNames(itemsByCategory).forEach(function(category) {
+  Object.getOwnPropertyNames(itemsByCategory).forEach(function (category) {
     var categoryAttachment = {
       author_name: user + " - " + action,
       title: category,
       title_link: projectSheetUrl,
       color: projectColor,
-      fields: itemsByCategory[category].map(function(item) {
+      fields: itemsByCategory[category].map(function (item) {
         var totalPrice =
           typeof item.totalPrice === "number" ? item.toFixed(2) : "UNKNOWN";
         var itemField = {
@@ -1773,7 +1770,7 @@ function buildItemListSlackAttachment(
             "x @ $" +
             item.unitPrice.toFixed(2) +
             "/e)",
-          short: "true"
+          short: "true",
         };
 
         if (item.supplier || item.productNum) itemField.value += "\n\t";
@@ -1794,7 +1791,7 @@ function buildItemListSlackAttachment(
       }),
       footer: projectName,
       footer_icon: OPTS.SLACK.SOAR_ICON,
-      mrkdwn_in: ["fields"]
+      mrkdwn_in: ["fields"],
     };
 
     itemListMessage.attachments.push(categoryAttachment);
@@ -1976,11 +1973,11 @@ function protectRanges() {
 
   SpreadsheetApp.getActiveSpreadsheet()
     .getProtections(SpreadsheetApp.ProtectionType.SHEET)
-    .forEach(function(protection) {
+    .forEach(function (protection) {
       protection.remove();
     });
 
-  sheets.forEach(function(sheet) {
+  sheets.forEach(function (sheet) {
     var sheetName = sheet.getName();
 
     if (
@@ -2053,7 +2050,7 @@ function sendSelectedToSheet() {
   if (!checkIfProjectSheet() || !verifyFinancialOfficer()) return;
   var selectedRanges = getSelectedRows();
 
-  var totalRowCount = selectedRanges.reduce(function(total, currentRange) {
+  var totalRowCount = selectedRanges.reduce(function (total, currentRange) {
     return total + currentRange;
   }, 0);
   if (totalRowCount > 12 || totalRowCount < 1) {
@@ -2095,9 +2092,7 @@ function sendSelectedToSheet() {
   newSheet.getRange("F14").setValue(projectName);
   newSheet.getRange("A21").setValue(projectDescription);
 
-  var needBy = moment()
-    .add(2, "weeks")
-    .format("MM/DD/YY");
+  var needBy = moment().add(2, "weeks").format("MM/DD/YY");
   newSheet.getRange("M38").setValue(needBy);
 
   var vendor = selectedRanges[0].getValues()[0][
@@ -2108,8 +2103,8 @@ function sendSelectedToSheet() {
   var allHaveSameVendor = true;
   var allNew = true;
   var index = 50;
-  selectedRanges.forEach(function(range) {
-    range.getValues().forEach(function(row) {
+  selectedRanges.forEach(function (range) {
+    range.getValues().forEach(function (row) {
       if (row[OPTS.ITEM_COLUMNS.SUPPLIER.index - 1] !== vendor) {
         allHaveSameVendor = false;
       }
