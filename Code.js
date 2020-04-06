@@ -523,17 +523,20 @@ function doPost(e) {
 }
 
 /**
- * Replace all occurrences of a string within another string.
- * @param {string} search The string to search in. Not modified.
- * @param {string} replacement The search term to match.
+ * Replace all occurrences of each key in replacements with the corresponding
+ * value, in order. Subsequent replacements can modify previous ones.
+ * @param {string} original The string to search in.
+ * @param {Map<string, any>} replacements The map of substitutes to use.
  * @returns {string}
- * @todo Make NOT a prototype modifier (only acceptable because this is GAS and
- * the JS never gets updated anyway).
  */
-String.prototype.replaceAll = function(search, replacement) {
-  var target = this;
-  return target.replace(new RegExp(search, "g"), replacement);
-};
+function replaceAll(original, replacements) {
+  let result = original;
+  replacements.reduce(
+    (replacement, search) =>
+      (result = result.replace(new RegExp(search, "g"), replacement))
+  );
+  return result;
+}
 
 /**
  * Build normal strings from the status' templates.
@@ -591,15 +594,19 @@ function buildSlackMessages(
     }
   }
 
-  return statusData.slack.messageTemplates.map(function(template, index) {
-    return template
-      .replaceAll("{emoji}", statusData.slack.emoji)
-      .replaceAll("{userTags}", !dontTagUsers ? targetUserTagsString + ":" : "")
-      .replaceAll("{userFullName}", userFullName)
-      .replaceAll("{numMarked}", numMarked.toString())
-      .replaceAll("{projectName}", projectName)
-      .replaceAll("{projectSheetUrl}", projectSheetUrl)
-      .replaceAll("{plural}", numMarked !== 1 ? "s" : "");
+  return statusData.slack.messageTemplates.map(function (template, index) {
+    return replaceAll(
+      template,
+      new Map([
+        ["{emoji}", statusData.slack.emoji],
+        ["{userTags}", !dontTagUsers ? targetUserTagsString + ":" : ""],
+        ["{userFullName}", userFullName],
+        ["{numMarked}", numMarked.toString()],
+        ["{projectName}", projectName],
+        ["{projectSheetUrl}", projectSheetUrl],
+        ["{plural}", numMarked !== 1 ? "s" : ""],
+      ])
+    );
   });
 }
 
