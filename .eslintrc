@@ -1,4 +1,15 @@
 {
   "parserOptions": { "ecmaVersion": 6 },
-  "extends": ["eslint:recommended", "google"]
+  "extends": ["eslint:recommended", "google"],
+  "rules": {
+    "max-len": ["error", {"ignoreStrings": true}],
+    "no-unused-vars": ["error", { "vars": "local" }]
+  },
+  "plugins": [
+    "googleappsscript"
+  ],
+  "env": {
+    "googleappsscript/googleappsscript": true,
+    "es6": true
+  }
 }
