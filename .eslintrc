@@ -1,13 +1,20 @@
 {
-  "parserOptions": { "ecmaVersion": 6 },
-  "extends": ["eslint:recommended", "google"],
-  "rules": {
-    "max-len": ["error", {"ignoreStrings": true}],
-    "no-unused-vars": ["error", { "vars": "local" }]
-  },
-  "plugins": [
-    "googleappsscript"
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended",
+    "prettier"
   ],
+  "globals": {
+    "Atomics": "readonly",
+    "SharedArrayBuffer": "readonly"
+  },
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": 2018,
+    "sourceType": "module"
+  },
+  "plugins": ["@typescript-eslint", "googleappsscript"],
   "env": {
     "googleappsscript/googleappsscript": true,
     "es6": true

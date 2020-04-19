@@ -1,4 +1,4 @@
 node_modules
-*.txt
-/secret.gs
-/secret.js
+build
+Code.js
+src/secret.ts
