@@ -1,4 +1,4 @@
-import moment from "moment";
+import { DateTime } from "luxon";
 import { getCurrentUserInfo, verifyFinancialOfficer } from "./authorization";
 import OPTS from "./config";
 import * as notifications from "./notifications";
@@ -63,7 +63,7 @@ export function sendSelectedToSheet(): void {
   newSheet.getRange("F14").setValue(projectName);
   newSheet.getRange("A21").setValue(projectDescription);
 
-  const needBy = moment().add(2, "weeks").format("MM/DD/YY");
+  const needBy = DateTime.local().plus({ weeks: 2 }).toFormat("MM/dd/yy");
   newSheet.getRange("M38").setValue(needBy);
 
   const vendor = selectedRanges[0].getValues()[0][
@@ -109,7 +109,11 @@ export function sendSelectedToSheet(): void {
   }
 
   const sheetName =
-    moment().format("YY-MM-DD") + " - " + projectName + " - " + vendor;
+    DateTime.local().toFormat("yy-MM-dd") +
+    " - " +
+    projectName +
+    " - " +
+    vendor;
   newSheet.setName(sheetName);
 
   const newSpreadsheet = SpreadsheetApp.create(sheetName);

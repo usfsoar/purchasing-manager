@@ -61,3 +61,6 @@ export function doPost(
 export function onOpen(): void {
   buildAndAddCustomMenu();
 }
+
+global.onOpen = onOpen;
+global.doPost = doPost;

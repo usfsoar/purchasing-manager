@@ -1,7 +1,7 @@
 {
   "name": "purchasing-manager",
   "dependencies": {
-    "moment": "^2.24.0"
+    "luxon": "^1.23.0"
   },
   "author": "Ian Sanders <iansanders@mail.usf.edu>",
   "scripts": {
@@ -13,12 +13,14 @@
   "license": "GPL",
   "devDependencies": {
     "@types/google-apps-script": "^1.0.12",
+    "@types/luxon": "^1.22.0",
     "@typescript-eslint/eslint-plugin": "^2.28.0",
     "@typescript-eslint/parser": "^2.28.0",
     "clasp": "^1.0.0",
     "eslint": "^6.8.0",
     "eslint-config-prettier": "^6.10.1",
     "eslint-plugin-googleappsscript": "^1.0.3",
+    "gas-webpack-plugin": "^1.0.2",
     "prettier": "^2.0.4",
     "typescript": "^3.8.3",
     "webpack": "^4.42.1",
