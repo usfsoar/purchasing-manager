@@ -9,7 +9,44 @@ import {
   getSelectedRows,
 } from "./spreadsheet_utils";
 import STATUSES_DATA from "./statuses_config";
-import { openFile } from "./user_interface";
+import { escapeSingleQuotes, escapeSpaces } from "./utils";
+
+/**
+ * Show option to open the folder or the file.
+ */
+export function openFile(
+  spreadsheet: GoogleAppsScript.Drive.File,
+  folder: GoogleAppsScript.Drive.Folder,
+  vendorName: string
+): void {
+  const vendor =
+    escapeSpaces(
+      encodeURIComponent(escapeSingleQuotes(vendorName.toUpperCase()))
+    ) || "VENDOR+NAME";
+  const spreadsheetId = spreadsheet.getId();
+  const folderId = folder.getId();
+  const fileUrl = "https://docs.google.com/spreadsheets/d/" + spreadsheetId;
+  const folderUrl = "https://drive.google.com/drive/u/2/folders/" + folderId;
+  const currentUserEmail = escapeSingleQuotes(
+    encodeURIComponent(getCurrentUserInfo().email)
+  );
+  const emailTemplateLink =
+    "https://mail.google.com/mail/u/0/?view=cm&fs=1&to=sg-rmdpurchase@usf.edu&authuser=" +
+    currentUserEmail +
+    "&su=SOCIETY+OF+AERONAUTICS+AND+ROCKETRY,+" +
+    vendor +
+    "&body=Please+see+attached+purchasing+form.&tf=1";
+  const html =
+    "<div style='font-family: sans-serif;'>Successfully sent items to sheet.<br><a target='_blank' href='" +
+    folderUrl +
+    "'>Open Purchasing Sheets Folder</a><br><a target='_blank' href='" +
+    fileUrl +
+    "'>Open The New Purchasing Sheet</a><br /><br /><strong>Remember:</strong> Attach the form to an email sent from your @mail.usf.edu email adress to sg-rmdpurchase@usf.edu with subject \"SOCIETY OF AERONAUTICS AND ROCKETRY, VENDOR NAME, EVENT DATE (if applicable)\". Only one form per email! <br><br> <a  href='" +
+    emailTemplateLink +
+    "' target='_blank'><strong>Start Email in Gmail</strong></a></div>";
+  const userInterface = HtmlService.createHtmlOutput(html);
+  SpreadsheetApp.getUi().showModalDialog(userInterface, "Open Sheet");
+}
 
 /** Send the selected items to a new purchasing sheet. */
 export function sendSelectedToSheet(): void {

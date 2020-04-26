@@ -1,5 +1,3 @@
-import { getNamedRangeValues } from "./spreadsheet_utils";
-
 /** @file Global configuration. */
 export default {
   /** Named Ranges throughout the spreadsheet. */
@@ -17,6 +15,8 @@ export default {
     STATUSES: "Statuses",
     /** Range containing the ID of the purchasing sheets folder. 1 cell. */
     PURCHASING_SHEETS_FOLDER_ID: "PurchasingSheetsFolderID",
+    /** All of the accounts controlled by the organization. */
+    ACCOUNTS: "Accounts",
   },
   /** Custom Menu info. */
   CUSTOM_MENU: {
@@ -72,7 +72,6 @@ export default {
   },
   /** Default values for items. */
   DEFAULT_VALUES: {
-    ACCOUNT_NAME: getNamedRangeValues("Accounts")[0],
     CATEGORY: "Uncategorized",
   },
   /** Names of sheets in the Spreadsheet */

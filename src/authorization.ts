@@ -15,14 +15,10 @@ import { getNamedRangeValues } from "./spreadsheet_utils";
 export function verifyFinancialOfficer(
   email: string | null = Session.getActiveUser().getEmail()
 ): boolean {
-  if (
-    email &&
-    getNamedRangeValues(OPTS.NAMED_RANGES.APPROVED_OFFICERS).indexOf(email) !==
-      -1
-  ) {
-    return true;
-  }
-  return false;
+  return (
+    email !== null &&
+    getNamedRangeValues(OPTS.NAMED_RANGES.APPROVED_OFFICERS).includes(email)
+  );
 }
 
 /**

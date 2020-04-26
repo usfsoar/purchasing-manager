@@ -7,6 +7,7 @@ import {
   checkIfProjectSheet,
   getAllRows,
   getColumnRange,
+  getNamedRangeValues,
   getProjectNameFromSheetName,
   getSelectedRows,
 } from "./spreadsheet_utils";
@@ -226,8 +227,9 @@ function markItems(newStatus: Status, markAll = false): void {
           categoryColumnValues
         ) {
           if (accountColumnValues[currentValuesRowIndex][0].toString() === "") {
-            accountColumnValues[currentValuesRowIndex][0] =
-              OPTS.DEFAULT_VALUES.ACCOUNT_NAME;
+            accountColumnValues[currentValuesRowIndex][0] = getNamedRangeValues(
+              OPTS.NAMED_RANGES.ACCOUNTS
+            )[0];
           }
           if (
             categoryColumnValues[currentValuesRowIndex][0].toString() === ""
@@ -412,8 +414,9 @@ function fastForwardItems(newStatus: Status): void {
         categoryColumnValues
       ) {
         if (accountColumnValues[currentValuesRowIndex][0].toString() === "") {
-          accountColumnValues[currentValuesRowIndex][0] =
-            OPTS.DEFAULT_VALUES.ACCOUNT_NAME;
+          accountColumnValues[currentValuesRowIndex][0] = getNamedRangeValues(
+            OPTS.NAMED_RANGES.ACCOUNTS
+          )[0];
         }
         if (categoryColumnValues[currentValuesRowIndex][0].toString() === "") {
           categoryColumnValues[currentValuesRowIndex][0] =
