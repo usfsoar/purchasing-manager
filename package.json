@@ -1,6 +1,8 @@
 {
   "name": "purchasing-manager",
-  "dependencies": {},
+  "dependencies": {
+    "moment": "^2.24.0"
+  },
   "author": "Ian Sanders <iansanders@mail.usf.edu>",
   "scripts": {
     "build": "tsc && webpack",
