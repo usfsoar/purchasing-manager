@@ -55,7 +55,7 @@ const STATUSES: Record<string, Status> = {
     allowedPrevious: ["New"],
     actionText: {
       fastForward: "Submitted",
-      selected: "Mark selected items as submitted",
+      selected: "🛒 Mark selected items as submitted",
     },
     slack: {
       emoji: ":usf:",
