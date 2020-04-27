@@ -11,61 +11,47 @@ import {
   getProjectNameFromSheetName,
   getSelectedRows,
 } from "./spreadsheet_utils";
-import STATUSES_DATA, { isNewStatusAllowed } from "./statuses_config";
-import {
-  makeListFromArray,
-  pushIfNewAndTruthy,
-  wrapInDoubleQuotes,
-} from "./utils";
+import STATUSES_DATA, { isStatusAllowedAsNext } from "./statuses_config";
+import { makeListFromArray, wrapInDoubleQuotes } from "./utils";
 
 /**
  * Check if the given row has data and the data is valid for the desired operation.
  * If the validation fails, alerts the user. Does not check row statuses;
  * rows with incorrect statuses are skipped silently.
- * @param {} rowValues rowValues The current data for the row.
- * @param {Status} newStatus The new status of the row for testing against.
- * @return {boolean} True if the row is valid and can be submitted.
+ * @param rowValues The current data for the row, in order.
+ * @param newStatus The new status of the row for testing against.
+ * @return `true` if the row is valid and can be submitted.
  */
 function validateRow(
   rowValues: (string | number | Date)[],
   newStatus: Status
 ): boolean {
-  let column;
-  let columnIndex;
+  const missingReccomendedColumns =
+    newStatus.reccomendedColumns
+      ?.filter((column) => rowValues[column.index - 1] === "")
+      .map((column) => column.name) ?? [];
 
-  for (
-    let i = 0;
-    newStatus.reccomendedColumns && i < newStatus.reccomendedColumns.length;
-    i++
-  ) {
-    column = newStatus.reccomendedColumns[i];
-    columnIndex = column.index - 1;
-    if (rowValues[columnIndex] === "") {
-      notifications.warnNotification(
-        'One or more items is missing a value for "' +
-          column.name +
-          '". Will mark anyway with default value.'
-      );
-    }
+  if (missingReccomendedColumns.length > 1) {
+    notifications.warnNotification(
+      `One or more items is missing a value for "${makeListFromArray(
+        missingReccomendedColumns
+      )}". Will mark anyway with default value.`
+    );
   }
 
-  for (
-    let j = 0;
-    newStatus.requiredColumns && j < newStatus.requiredColumns.length;
-    j++
-  ) {
-    column = newStatus.requiredColumns[j];
-    columnIndex = column.index - 1;
-    if (rowValues[columnIndex] === "") {
-      notifications.errorNotification(
-        'Cannot submit: one or more items is missing a value for "' +
-          column.name +
-          '". This value is required.'
-      );
-      return false;
-    }
-  }
+  const missingRequiredColumns =
+    newStatus.requiredColumns
+      ?.filter((column) => rowValues[column.index - 1] === "")
+      .map((column) => column.name) ?? [];
 
+  if (missingRequiredColumns.length > 1) {
+    notifications.errorNotification(
+      `Cannot submit: one or more items is missing values for ${makeListFromArray(
+        missingRequiredColumns
+      )}. This value is required.`
+    );
+    return false;
+  }
   return true;
 }
 
@@ -86,48 +72,26 @@ function markItems(newStatus: Status, markAll = false): void {
     return;
   }
 
-  /**
-   * All the ranges in the sheet if `markAll` is set, else just the selected.
-   */
-  const selectedRanges = markAll ? getAllRows() : getSelectedRows();
+  const rangesToMark = markAll ? getAllRows() : getSelectedRows();
 
   const currentUser = getCurrentUserInfo();
-  const currentUserEmail = currentUser.email;
-  const currentUserFullName = currentUser.fullName;
   const currentDate = new Date();
 
   const currentSheet = SpreadsheetApp.getActiveSheet();
   const projectName = getProjectNameFromSheetName(currentSheet.getSheetName());
-  const projectSheetUrl =
-    SpreadsheetApp.getActiveSpreadsheet().getUrl() +
-    "#gid=" +
-    currentSheet.getSheetId();
-  const itemRequestors: string[] = [];
+  const projectSheetUrl = `${SpreadsheetApp.getActiveSpreadsheet().getUrl()}#gid=${currentSheet.getSheetId()}`;
+  const itemRequestors = new Set<string>();
 
   // We would filter out all the rows with disallowed current statuses here,
   // rather than skipping them in both of these loops, but that would require
   // modifying the ranges, which is much more time-intensive than just skipping.
 
-  // Loop through every row in every range and validate them, throwing the flag
-  // if any are invalid. This is a separate loop from the actual modification
-  // loop because if it were the same, we could modify some of the data before
-  // seeing that other data is invalid, which would not be the expected
-  // behavior.
-  // No need to alert the user on fail; validateRow will do that itself.
-  let allRowsValid = true;
-
-  selectionsLoop: for (let i = 0; i < selectedRanges.length; i++) {
-    const range = selectedRanges[i];
+  for (const range of rangesToMark) {
     const rangeValues = range.getValues();
-
-    for (let j = 0; j < range.getNumRows(); j++) {
-      /** Array of row values. */
-      const row = rangeValues[j];
-      // If current status is not in allowed statuses, don't verify, just skip
-      // minus 1 to convert from 1-based Sheets column number to 0-based array
-      // index
+    for (const row of rangeValues) {
+      // If current status is not in allowed statuses, don't verify, just skip.
       if (
-        !isNewStatusAllowed(
+        !isStatusAllowedAsNext(
           row[OPTS.ITEM_COLUMNS.STATUS.index - 1].toString(),
           newStatus
         )
@@ -135,188 +99,170 @@ function markItems(newStatus: Status, markAll = false): void {
         continue;
       }
 
-      // Otherwise validate. If a single row is invalid, quit both loops
-      if (!validateRow(row, newStatus)) {
-        allRowsValid = false;
-        break selectionsLoop;
-      }
+      // No need to alert the user on fail; validateRow will do that itself.
+      // Otherwise validate. If a single row is invalid, quit
+      if (!validateRow(row, newStatus)) return;
     }
   }
 
-  if (allRowsValid) {
-    // Cache the entire columns, to avoid making dozens of calls to the server
-    const statusColumn = getColumnRange(OPTS.ITEM_COLUMNS.STATUS.index);
-    const statusColumnValues = statusColumn.getValues();
+  // Caching column values to write in bulk at the end:
+  let userColumn;
+  let dateColumn;
+  let userColumnValues;
+  let dateColumnValues;
+  if (newStatus.columns.user) {
+    userColumn = getColumnRange(newStatus.columns.user.index);
+    userColumnValues = getColumnRange(newStatus.columns.user.index).getValues();
+  }
+  if (newStatus.columns.date) {
+    dateColumn = getColumnRange(newStatus.columns.date.index);
+    dateColumnValues = getColumnRange(newStatus.columns.date.index).getValues();
+  }
 
-    let userColumn;
-    let dateColumn;
-    let userColumnValues;
-    let dateColumnValues;
-    if (newStatus.columns.user) {
-      userColumn = getColumnRange(newStatus.columns.user.index);
-      userColumnValues = userColumn.getValues();
-    }
-    if (newStatus.columns.date) {
-      dateColumn = getColumnRange(newStatus.columns.date.index);
-      dateColumnValues = dateColumn.getValues();
-    }
+  let accountColumn;
+  let categoryColumn;
+  let accountColumnValues;
+  let categoryColumnValues;
+  if (newStatus.fillInDefaults) {
+    accountColumn = getColumnRange(OPTS.ITEM_COLUMNS.ACCOUNT.index);
+    categoryColumn = getColumnRange(OPTS.ITEM_COLUMNS.CATEGORY.index);
+    accountColumnValues = accountColumn.getValues();
+    categoryColumnValues = categoryColumn.getValues();
+  }
 
-    let accountColumn;
-    let categoryColumn;
-    let accountColumnValues;
-    let categoryColumnValues;
-    if (newStatus.fillInDefaults) {
-      accountColumn = getColumnRange(OPTS.ITEM_COLUMNS.ACCOUNT.index);
-      categoryColumn = getColumnRange(OPTS.ITEM_COLUMNS.CATEGORY.index);
-      accountColumnValues = accountColumn.getValues();
-      categoryColumnValues = categoryColumn.getValues();
-    }
+  // Read (not modify, so no need for range) the requestor data for notifying
+  const requestorColumnValues =
+    newStatus.slack.targetUsers === OPTS.SLACK.TARGET_USERS.REQUESTORS
+      ? getColumnRange(OPTS.ITEM_COLUMNS.REQUEST_EMAIL.index).getValues()
+      : null;
 
-    // Read (not modify, so no need for range) the requestor data for notifying
-    let requestorColumnValues;
-    if (newStatus.slack.targetUsers === OPTS.SLACK.TARGET_USERS.REQUESTORS) {
-      requestorColumnValues = getColumnRange(
-        OPTS.ITEM_COLUMNS.REQUEST_EMAIL.index
-      ).getValues();
-    }
+  /* List of items, for sending to Slack */
+  const items = [];
 
-    /* List of items, for sending to Slack */
-    const items = [];
+  // Cache the entire columns, to avoid making dozens of calls to the server
+  const statusColumn = getColumnRange(OPTS.ITEM_COLUMNS.STATUS.index);
+  const statusColumnValues = statusColumn.getValues();
 
-    // Loop through the ranges
-    for (let k = 0; k < selectedRanges.length; k++) {
-      const range = selectedRanges[k];
-      const rangeStartIndex = range.getRow() - 1;
-      const rangeValues = range.getValues();
+  // Loop through the ranges
+  for (const range of rangesToMark) {
+    const rangeStartIndex = range.getRow() - 1;
+    const rangeValues = range.getValues();
+    const rangeLength = range.getNumRows();
 
-      // Loop through the rows in the range
-      rowLoop: for (let l = 0; l < range.getNumRows(); l++) {
-        /** The index (not number) of the current row in the spreadsheet. */
-        const currentSheetRowIndex = rangeStartIndex + l;
-        /**
-         * The index of the current value row in the spreadsheet, with the first
-         * row after the headers being 0.
-         */
-        const currentValuesRowIndex =
-          currentSheetRowIndex - OPTS.NUM_HEADER_ROWS;
+    // Loop through the rows in the range
+    for (let l = 0; l < rangeLength; l++) {
+      /** The index (not number) of the current row in the spreadsheet. */
+      const currentSheetRowIndex = rangeStartIndex + l;
+      /**
+       * The index of the current value row in the spreadsheet, with the first
+       * row after the headers being 0.
+       */
+      const currentValuesRowIndex = currentSheetRowIndex - OPTS.NUM_HEADER_ROWS;
 
-        // If this row's status is not in allowed statuses, don't verify, just
-        // skip
-        const currentStatusText = statusColumnValues[
-          currentValuesRowIndex
-        ][0].toString();
-        if (!isNewStatusAllowed(currentStatusText, newStatus)) {
-          continue rowLoop;
-        }
-
-        // Update values in local cache
-        // These ranges don't include the header, so 0 in the range is
-        // OPTS.NUM_HEADER_ROWS in the spreadsheet
-        statusColumnValues[currentValuesRowIndex][0] = newStatus.text;
-
-        if (newStatus.columns.user && userColumnValues) {
-          userColumnValues[currentValuesRowIndex][0] = currentUserEmail;
-        }
-        if (newStatus.columns.date && dateColumnValues) {
-          dateColumnValues[currentValuesRowIndex][0] = currentDate;
-        }
-
-        if (
-          newStatus.fillInDefaults &&
-          accountColumnValues &&
-          categoryColumnValues
-        ) {
-          if (accountColumnValues[currentValuesRowIndex][0].toString() === "") {
-            accountColumnValues[currentValuesRowIndex][0] = getNamedRangeValues(
-              OPTS.NAMED_RANGES.ACCOUNTS
-            )[0];
-          }
-          if (
-            categoryColumnValues[currentValuesRowIndex][0].toString() === ""
-          ) {
-            categoryColumnValues[currentValuesRowIndex][0] =
-              OPTS.DEFAULT_VALUES.CATEGORY;
-          }
-        }
-
-        // Save the requestor data for notifying; avoid duplicates
-        if (
-          newStatus.slack.targetUsers === OPTS.SLACK.TARGET_USERS.REQUESTORS &&
-          requestorColumnValues
-        ) {
-          pushIfNewAndTruthy(
-            itemRequestors,
-            requestorColumnValues[currentValuesRowIndex][0].toString()
-          );
-        }
-
-        items.push({
-          name: rangeValues[l][OPTS.ITEM_COLUMNS.NAME.index - 1],
-          quantity: rangeValues[l][OPTS.ITEM_COLUMNS.QUANTITY.index - 1],
-          totalPrice: rangeValues[l][OPTS.ITEM_COLUMNS.TOTAL_PRICE.index - 1],
-          unitPrice: rangeValues[l][OPTS.ITEM_COLUMNS.UNIT_PRICE.index - 1],
-          category: rangeValues[l][OPTS.ITEM_COLUMNS.CATEGORY.index - 1],
-          requestorComments:
-            rangeValues[l][OPTS.ITEM_COLUMNS.REQUEST_COMMENTS.index - 1],
-          officerComments:
-            rangeValues[l][OPTS.ITEM_COLUMNS.OFFICER_COMMENTS.index - 1],
-          supplier: rangeValues[l][OPTS.ITEM_COLUMNS.SUPPLIER.index - 1],
-          productNum: rangeValues[l][OPTS.ITEM_COLUMNS.PRODUCT_NUM.index - 1],
-          link: rangeValues[l][OPTS.ITEM_COLUMNS.LINK.index - 1],
-        });
+      // If this row's status is not in allowed statuses, don't verify, just
+      // skip
+      if (
+        !isStatusAllowedAsNext(
+          statusColumnValues[currentValuesRowIndex][0].toString(),
+          newStatus
+        )
+      ) {
+        continue;
       }
+
+      // Update values in local cache
+      // These ranges don't include the header, so 0 in the range is
+      // OPTS.NUM_HEADER_ROWS in the spreadsheet
+      statusColumnValues[currentValuesRowIndex][0] = newStatus.text;
+
+      if (newStatus.columns.user && userColumnValues) {
+        userColumnValues[currentValuesRowIndex][0] = currentUser.email;
+      }
+      if (newStatus.columns.date && dateColumnValues) {
+        dateColumnValues[currentValuesRowIndex][0] = currentDate;
+      }
+
+      if (
+        newStatus.fillInDefaults &&
+        accountColumnValues &&
+        categoryColumnValues
+      ) {
+        if (accountColumnValues[currentValuesRowIndex][0].toString() === "") {
+          accountColumnValues[currentValuesRowIndex][0] = getNamedRangeValues(
+            OPTS.NAMED_RANGES.ACCOUNTS
+          )[0];
+        }
+        if (categoryColumnValues[currentValuesRowIndex][0].toString() === "") {
+          categoryColumnValues[currentValuesRowIndex][0] =
+            OPTS.DEFAULT_VALUES.CATEGORY;
+        }
+      }
+
+      // Save the requestor data for notifying; avoid duplicates
+      if (
+        newStatus.slack.targetUsers === OPTS.SLACK.TARGET_USERS.REQUESTORS &&
+        requestorColumnValues
+      ) {
+        itemRequestors.add(requestorColumnValues[currentValuesRowIndex][0]);
+      }
+
+      items.push({
+        name: rangeValues[l][OPTS.ITEM_COLUMNS.NAME.index - 1],
+        quantity: rangeValues[l][OPTS.ITEM_COLUMNS.QUANTITY.index - 1],
+        totalPrice: rangeValues[l][OPTS.ITEM_COLUMNS.TOTAL_PRICE.index - 1],
+        unitPrice: rangeValues[l][OPTS.ITEM_COLUMNS.UNIT_PRICE.index - 1],
+        category: rangeValues[l][OPTS.ITEM_COLUMNS.CATEGORY.index - 1],
+        requestorComments:
+          rangeValues[l][OPTS.ITEM_COLUMNS.REQUEST_COMMENTS.index - 1],
+        officerComments:
+          rangeValues[l][OPTS.ITEM_COLUMNS.OFFICER_COMMENTS.index - 1],
+        supplier: rangeValues[l][OPTS.ITEM_COLUMNS.SUPPLIER.index - 1],
+        productNum: rangeValues[l][OPTS.ITEM_COLUMNS.PRODUCT_NUM.index - 1],
+        link: rangeValues[l][OPTS.ITEM_COLUMNS.LINK.index - 1],
+      });
     }
+  }
 
-    // Write the cached values
-    statusColumn.setValues(statusColumnValues);
+  // Write the cached values
+  statusColumn.setValues(statusColumnValues);
 
-    if (newStatus.columns.user && userColumn && userColumnValues) {
-      userColumn.setValues(userColumnValues);
-    }
-    if (newStatus.columns.date && dateColumn && dateColumnValues) {
-      dateColumn.setValues(dateColumnValues);
-    }
+  if (newStatus.columns.user && userColumn && userColumnValues) {
+    getColumnRange(newStatus.columns.user.index).setValues(userColumnValues);
+  }
+  if (newStatus.columns.date && dateColumn && dateColumnValues) {
+    getColumnRange(newStatus.columns.date.index).setValues(dateColumnValues);
+  }
 
-    if (
-      newStatus.fillInDefaults &&
-      accountColumn &&
-      accountColumnValues &&
-      categoryColumn &&
-      categoryColumnValues
-    ) {
-      accountColumn.setValues(accountColumnValues);
-      categoryColumn.setValues(categoryColumnValues);
-    }
+  if (
+    newStatus.fillInDefaults &&
+    accountColumn &&
+    accountColumnValues &&
+    categoryColumn &&
+    categoryColumnValues
+  ) {
+    accountColumn.setValues(accountColumnValues);
+    categoryColumn.setValues(categoryColumnValues);
+  }
 
-    /**
-     * All of the possible 'from' statuses, but with double quotes around them.
-     */
-    const quotedFromStatuses = newStatus.allowedPrevious.map(
-      wrapInDoubleQuotes
-    );
-
+  if (items.length > 0) {
     notifications.successNotification(
-      items.length +
-        " items marked from " +
-        makeListFromArray(quotedFromStatuses, "or") +
-        ' to "' +
-        newStatus.text +
-        '."'
+      `${items.length} items marked from ${makeListFromArray(
+        newStatus.allowedPrevious.map(wrapInDoubleQuotes),
+        "or"
+      )} to "${newStatus.text}."`
     );
 
-    const projectColor = currentSheet.getTabColor();
-
-    if (items.length !== 0) {
-      slackNotifyItems(
-        newStatus,
-        currentUserFullName,
-        itemRequestors,
-        items,
-        projectName ?? "_Error: project not found._",
-        projectSheetUrl,
-        projectColor ?? "#000000"
-      );
-    }
+    slackNotifyItems(
+      newStatus,
+      currentUser.fullName,
+      Array.from(itemRequestors.values()),
+      items,
+      projectName ?? "_Error: project not found._",
+      projectSheetUrl,
+      currentSheet.getTabColor() ?? "#000000"
+    );
+  } else {
+    notifications.errorNotification("No valid items selected for that action.");
   }
 }
 
@@ -382,8 +328,7 @@ function fastForwardItems(newStatus: Status): void {
   );
 
   // Loop through the ranges
-  for (let k = 0; k < selectedRanges.length; k++) {
-    const range = selectedRanges[k];
+  for (const range of selectedRanges) {
     const rangeStartIndex = range.getRow() - 1;
 
     // Loop through the rows in the range
@@ -469,7 +414,7 @@ function fastForwardItems(newStatus: Status): void {
   );
 
   notifications.successNotification(
-    numMarked + ' items fast-forwarded to "' + newStatus.text + '."'
+    `${numMarked} items fast-forwarded to "${newStatus.text}."`
   );
 }
 
@@ -567,6 +512,13 @@ export function markSelectedNew(): void {
 
 /** Mark all possible items in the sheet as new. */
 export function markAllNew(): void {
+  const ui = SpreadsheetApp.getUi();
+  const response = ui.alert(
+    "Confirm",
+    "Are you sure you want to mark ALL unmarked items in this project as new?",
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (response === ui.Button.CANCEL) return;
   markItems(STATUSES_DATA.NEW, true);
 }
 

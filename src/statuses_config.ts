@@ -320,12 +320,12 @@ export const TEST_STATUS = {
 
 /**
  * Check to see if the row is allowed to tbe changes to `newStatus`.
- * @param {string} currentStatusText The current status of the row.
- * @param {Status} newStatus The status object to check for changing to.
- * @return {boolean} True if the current status of the row allows it to be
- * changed to the newStatus.
+ * @param currentStatusText The current status of the row.
+ * @param newStatus The status object to check for changing to.
+ * @return `true` if the current status of the row allows it to be changed to
+ * the `newStatus`.
  */
-export function isNewStatusAllowed(
+export function isStatusAllowedAsNext(
   currentStatusText: string,
   newStatus: Status
 ): boolean {

@@ -5,7 +5,7 @@ export interface Column {
   /** 1-based index of the column in the sheet. */
   index: number;
   /** Name of the column. */
-  name?: string;
+  name: string;
 }
 
 /** A data object describing a possible item status. */
