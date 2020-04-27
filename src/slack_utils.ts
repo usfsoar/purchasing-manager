@@ -385,7 +385,6 @@ export function slackNotifyItems(
 ): void {
   statusData.slack.channelWebhooks?.forEach((webhook, index) => {
     let messages: string[] = [];
-    Logger.log(itemsMarked);
     if (index === 0) {
       messages = buildSlackMessages(
         statusData,

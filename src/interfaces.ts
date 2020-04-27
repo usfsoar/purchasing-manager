@@ -79,6 +79,7 @@ export interface User {
   slackId: string;
   fullName: string;
   isFinancialOfficer: boolean;
+  /** Email will be empty string if the app doesn't have access. */
   email: string;
   phone?: string;
 }

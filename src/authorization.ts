@@ -4,6 +4,19 @@ import SECRET_OPTS from "./secret_config";
 import { getNamedRangeValues } from "./spreadsheet_utils";
 
 /**
+ * Attempt to get the current user's email. Tries both the active and effective
+ * users, and if neither works (because Apps Script doesn't always give
+ * permission to access users' emails), returns `null`.
+ */
+export function getActiveUserEmail(): string | null {
+  return (
+    Session.getActiveUser().getEmail() ||
+    Session.getEffectiveUser().getEmail() ||
+    null
+  );
+}
+
+/**
  * Verify whether or not the email provided is one of an approved financial
  * officer.
  * After first run, uses cache to avoid having to pull the range again.
@@ -13,7 +26,7 @@ import { getNamedRangeValues } from "./spreadsheet_utils";
  * @return `true` if the user is a financial officer.
  */
 export function verifyFinancialOfficer(
-  email: string | null = Session.getActiveUser().getEmail()
+  email: string | null = getActiveUserEmail()
 ): boolean {
   return (
     email !== null &&
@@ -26,7 +39,7 @@ export function verifyFinancialOfficer(
  * @return `true` if the current user is an admin.
  */
 export function verifyAdmin(): boolean {
-  return Session.getActiveUser().getEmail() === SECRET_OPTS.ADMIN_EMAIL;
+  return getActiveUserEmail() === SECRET_OPTS.ADMIN_EMAIL;
 }
 
 /**
@@ -48,9 +61,9 @@ function isUserCacheComplete(cache: Partial<User>): cache is User {
  * @returns Information about the current user.
  */
 export const getCurrentUserInfo = (function (): () => User {
-  const currentEmail = Session.getActiveUser().getEmail();
+  const currentEmail = getActiveUserEmail();
   const cache: Partial<User> & Pick<User, "email" | "isFinancialOfficer"> = {
-    email: currentEmail,
+    email: currentEmail ?? "",
     isFinancialOfficer: verifyFinancialOfficer(currentEmail),
   };
 
