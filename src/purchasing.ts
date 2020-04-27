@@ -25,25 +25,13 @@ export function openFile(
     ) || "VENDOR+NAME";
   const spreadsheetId = spreadsheet.getId();
   const folderId = folder.getId();
-  const fileUrl = "https://docs.google.com/spreadsheets/d/" + spreadsheetId;
-  const folderUrl = "https://drive.google.com/drive/u/2/folders/" + folderId;
+  const fileUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}`;
+  const folderUrl = `https://drive.google.com/drive/u/2/folders/${folderId}`;
   const currentUserEmail = escapeSingleQuotes(
     encodeURIComponent(getCurrentUserInfo().email)
   );
-  const emailTemplateLink =
-    "https://mail.google.com/mail/u/0/?view=cm&fs=1&to=sg-rmdpurchase@usf.edu&authuser=" +
-    currentUserEmail +
-    "&su=SOCIETY+OF+AERONAUTICS+AND+ROCKETRY,+" +
-    vendor +
-    "&body=Please+see+attached+purchasing+form.&tf=1";
-  const html =
-    "<div style='font-family: sans-serif;'>Successfully sent items to sheet.<br><a target='_blank' href='" +
-    folderUrl +
-    "'>Open Purchasing Sheets Folder</a><br><a target='_blank' href='" +
-    fileUrl +
-    "'>Open The New Purchasing Sheet</a><br /><br /><strong>Remember:</strong> Attach the form to an email sent from your @mail.usf.edu email adress to sg-rmdpurchase@usf.edu with subject \"SOCIETY OF AERONAUTICS AND ROCKETRY, VENDOR NAME, EVENT DATE (if applicable)\". Only one form per email! <br><br> <a  href='" +
-    emailTemplateLink +
-    "' target='_blank'><strong>Start Email in Gmail</strong></a></div>";
+  const emailTemplateLink = `https://mail.google.com/mail/u/0/?view=cm&fs=1&to=sg-rmdpurchase@usf.edu&authuser=${currentUserEmail}&su=SOCIETY+OF+AERONAUTICS+AND+ROCKETRY,+${vendor}&body=Please+see+attached+purchasing+form.&tf=1`;
+  const html = `<div style='font-family: sans-serif;'>Successfully sent items to sheet.<br><a target='_blank' href='${folderUrl}'>Open Purchasing Sheets Folder</a><br><a target='_blank' href='${fileUrl}'>Open The New Purchasing Sheet</a><br /><br /><strong>Remember:</strong> Attach the form to an email sent from your @mail.usf.edu email adress to sg-rmdpurchase@usf.edu with subject \\"SOCIETY OF AERONAUTICS AND ROCKETRY, VENDOR NAME, EVENT DATE (if applicable)\\". Only one form per email! <br><br> <a  href='${emailTemplateLink}' target='_blank'><strong>Start Email in Gmail</strong></a></div>`;
   const userInterface = HtmlService.createHtmlOutput(html);
   SpreadsheetApp.getUi().showModalDialog(userInterface, "Open Sheet");
 }
@@ -143,12 +131,9 @@ export function sendSelectedToSheet(): void {
     return;
   }
 
-  const sheetName =
-    DateTime.local().toFormat("yy-MM-dd") +
-    " - " +
-    projectName +
-    " - " +
-    vendor;
+  const sheetName = `${DateTime.local().toFormat(
+    "yy-MM-dd"
+  )} - ${projectName} - ${vendor}`;
   newSheet.setName(sheetName);
 
   const newSpreadsheet = SpreadsheetApp.create(sheetName);
@@ -162,7 +147,9 @@ export function sendSelectedToSheet(): void {
   file.setName(sheetName);
   newSheet.copyTo(newSpreadsheet);
   const sheet1 = newSpreadsheet.getSheetByName("Sheet1");
-  if (sheet1) newSpreadsheet.deleteSheet(sheet1);
+  if (sheet1) {
+    newSpreadsheet.deleteSheet(sheet1);
+  }
   currentSpreadsheet.deleteSheet(newSheet);
   openFile(file, targetFolder, vendor);
 }

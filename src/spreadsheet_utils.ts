@@ -15,10 +15,8 @@ export function getSheetNameFromProjectName(
     .getRange(OPTS.NAMED_RANGES.PROJECT_NAMES_TO_SHEETS)
     .getValues();
 
-  for (let i = 0; i < projectsData.length; i++) {
-    if (projectsData[i][0] === projectName) return projectsData[i][1];
-  }
-
+  const project = projectsData.find((project) => project[0] === projectName);
+  if (project) return project[1];
   if (nullIfMissing) return null;
   return "_Error: Project Not Found_";
 }
@@ -32,11 +30,7 @@ export function getProjectNameFromSheetName(sheetName: string): string | null {
     .getRange(OPTS.NAMED_RANGES.PROJECT_NAMES_TO_SHEETS)
     .getValues();
 
-  for (let i = 0; i < projectsData.length; i++) {
-    if (projectsData[i][1] === sheetName) return projectsData[i][0];
-  }
-
-  return null;
+  return projectsData.find((project) => project[1] === sheetName)?.[0] ?? null;
 }
 
 /**
@@ -45,16 +39,11 @@ export function getProjectNameFromSheetName(sheetName: string): string | null {
  * @return Unordered array of values, flattened into a 1-dimensional array.
  */
 export function getNamedRangeValues(rangeName: string): string[] {
-  const valuesGrid = SpreadsheetApp.getActiveSpreadsheet()
+  return SpreadsheetApp.getActiveSpreadsheet()
     .getRange(rangeName)
-    .getValues();
-
-  // Flatten and remove empty values
-  const valuesArray = valuesGrid
+    .getValues()
     .map((row) => row[0])
     .filter((value) => value !== "");
-
-  return valuesArray;
 }
 
 /**
@@ -72,7 +61,7 @@ export function checkIfProjectSheet(sheetName?: string): boolean {
     OPTS.NAMED_RANGES.PROJECT_SHEETS
   );
 
-  if (projectSheetNames.indexOf(currentSheetName) === -1) {
+  if (!projectSheetNames.includes(currentSheetName)) {
     nofications.error("This action may only be performed in a project sheet");
     return false;
   }

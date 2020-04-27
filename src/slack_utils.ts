@@ -1,3 +1,4 @@
+import { DateTime } from "luxon";
 import OPTS from "./config";
 import { Item, Status } from "./interfaces";
 import {
@@ -20,14 +21,7 @@ function getSlackIdByEmail(email: string): string | null {
   if (!userSheet) throw new Error("User data sheet not found.");
 
   const userData = userSheet.getDataRange().getValues();
-
-  for (let i = 1; i < userData.length; i++) {
-    if (userData[i][0] === email) {
-      return userData[i][1];
-    }
-  }
-
-  return null;
+  return userData.find((row) => row[0] === email)?.[1] ?? null;
 }
 
 /**
@@ -37,7 +31,7 @@ function getSlackIdByEmail(email: string): string | null {
  */
 function getSlackTagByEmail(email: string): string {
   const slackId = getSlackIdByEmail(email);
-  return slackId ? "<@" + getSlackIdByEmail(email) + ">" : "";
+  return slackId ? `<@${getSlackIdByEmail(email)}>` : "";
 }
 
 /**
@@ -90,10 +84,7 @@ export function buildProjectStatusSlackMessage(
     100
   ).toFixed(0);
 
-  const dashboardSheetUrl =
-    SpreadsheetApp.getActiveSpreadsheet().getUrl() +
-    "#gid=" +
-    dashboardSheet.getSheetId();
+  const dashboardSheetUrl = `${SpreadsheetApp.getActiveSpreadsheet().getUrl()}#gid=${dashboardSheet.getSheetId()}`;
 
   const projectSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(
     projectSheetName
@@ -101,9 +92,7 @@ export function buildProjectStatusSlackMessage(
 
   const projectSheetUrl =
     projectSheet &&
-    SpreadsheetApp.getActiveSpreadsheet().getUrl() +
-      "#gid=" +
-      projectSheet.getSheetId();
+    `${SpreadsheetApp.getActiveSpreadsheet().getUrl()}#gid=${projectSheet.getSheetId()}`;
 
   const actions = [
     {
@@ -156,7 +145,7 @@ export function buildProjectStatusSlackMessage(
         ],
         footer: "SOAR Purchasing Database",
         footer_icon: OPTS.SLACK.SOAR_ICON,
-        ts: new Date().getTime() / 1000,
+        ts: DateTime.local().toSeconds(),
         actions,
       },
     ],
@@ -204,20 +193,16 @@ export function buildSlackMessages(
          */
         const officerNotifyOptions = getNamedRangeValues(
           OPTS.NAMED_RANGES.NOTIFY_APPROVED_OFFICERS
-        ).map(function (value) {
-          return value !== "NO";
-        });
+        ).map((value) => value !== "NO");
         /** Emails of all the officers that do get notified. */
         const officerEmails = getNamedRangeValues(
           OPTS.NAMED_RANGES.APPROVED_OFFICERS
-        ).filter(function (_, index) {
-          return officerNotifyOptions[index];
-        });
+        ).filter((_, index) => officerNotifyOptions[index]);
+
         const officerUserTags = officerEmails
           .map(getSlackTagByEmail)
-          .filter(function (slackTag) {
-            return slackTag != "";
-          });
+          .filter((slackTag) => slackTag !== "");
+
         targetUserTagsString = makeListFromArray(officerUserTags, "or");
         break;
       }
@@ -296,14 +281,9 @@ function buildItemListSlackAttachment(
               : "UNKNOWN";
           const itemField = {
             title: truncateString(item.name, 45),
-            value:
-              "$" +
-              totalPrice +
-              "\n\t (" +
-              item.quantity +
-              "x @ $" +
-              item.unitPrice.toFixed(2) +
-              "/e)",
+            value: `$${totalPrice}\n\t (${
+              item.quantity
+            }x @ $${item.unitPrice.toFixed(2)}/e)`,
             short: "true",
           };
 
@@ -315,12 +295,10 @@ function buildItemListSlackAttachment(
           // if(item.link && (item.supplier || item.productNum)) itemField.value += ">";
 
           if (item.requestorComments) {
-            itemField.value +=
-              "\n Requestor Comment: \n> _" + item.requestorComments + "_";
+            itemField.value += `\n Requestor Comment: \n> _${item.requestorComments}_`;
           }
           if (item.officerComments) {
-            itemField.value +=
-              "\n Officer Comment: \n> _" + item.officerComments + "_";
+            itemField.value += `\n Officer Comment: \n> _${item.officerComments}_`;
           }
 
           return itemField;
@@ -413,7 +391,7 @@ export function slackNotifyItems(
     messagesWithAttachments[messagesWithAttachments.length - 1].attachments = [
       {
         callback_id: "itemNotification",
-        fallback: "<" + projectSheetUrl + "|View Items>",
+        fallback: `<${projectSheetUrl}|View Items>`,
         actions: [
           buildItemListSlackAttachment(
             itemsMarked,
