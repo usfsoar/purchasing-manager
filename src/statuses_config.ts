@@ -291,33 +291,6 @@ const STATUSES: Record<string, Status> = {
 
 export default STATUSES;
 
-export const TEST_STATUS = {
-  text: "Test",
-  allowedPrevious: ["", "Test"],
-  actionText: {
-    fastForward: "Test",
-    selected: "Test update item",
-  },
-  slack: {
-    emoji: ":checkered_flag:",
-    targetUsers: OPTS.SLACK.TARGET_USERS.CHANNEL,
-    messageTemplates: [
-      "{emoji} {userTags} {userFullName} marked {numMarked} item{plural} for {projectName} as *test* by TEsting.",
-    ],
-    channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.DEV],
-  },
-  columns: {
-    user: null,
-    date: OPTS.ITEM_COLUMNS.UPDATE_DATE,
-  },
-  fastForwardColumns: {
-    user: [OPTS.ITEM_COLUMNS.REQUEST_EMAIL, OPTS.ITEM_COLUMNS.OFFICER_EMAIL],
-    date: [OPTS.ITEM_COLUMNS.REQUEST_DATE, OPTS.ITEM_COLUMNS.SUBMIT_DATE],
-  },
-  fillInDefaults: true,
-  officersOnly: true,
-};
-
 /**
  * Check to see if the row is allowed to tbe changes to `newStatus`.
  * @param currentStatusText The current status of the row.

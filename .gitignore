@@ -1,4 +1,4 @@
 node_modules
 build
 Code.js
-src/secret.ts
+src/secret_config.ts
