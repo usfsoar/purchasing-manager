@@ -22,7 +22,7 @@ const STATUSES: Record<string, Status> = {
     allowedPrevious: ["", "Awaiting Info"],
     actionText: {
       fastForward: "New",
-      selected: "Submit selected new items",
+      selected: "✔️ Submit selected new items",
       all: "Submit all new items",
     },
     slack: {
@@ -140,7 +140,7 @@ const STATUSES: Record<string, Status> = {
     allowedPrevious: ["Awaiting Pickup", "Submitted", "Ordered"],
     actionText: {
       fastForward: "Received",
-      selected: "Mark selected items as received (picked up)",
+      selected: "📦 Mark selected items as received (picked up)",
     },
     slack: {
       emoji: ":heavy_check_mark:",
@@ -267,7 +267,7 @@ const STATUSES: Record<string, Status> = {
       emoji: ":money_with_wings:",
       targetUsers: OPTS.SLACK.TARGET_USERS.REQUESTORS,
       messageTemplates: [
-        "{emoji} {userTags} {userFullName} sent reimbursement for {numMarked} item{plural}.",
+        "{emoji} {userTags} {userFullName} t reimbursement for {numMarked} item{plural}.",
       ],
       channelWebhooks: [SECRET_OPTS.SLACK.WEBHOOKS.PURCHASING],
     },

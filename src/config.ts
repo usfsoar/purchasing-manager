@@ -18,13 +18,6 @@ export default {
     /** All of the accounts controlled by the organization. */
     ACCOUNTS: "Accounts",
   },
-  /** Custom Menu info. */
-  CUSTOM_MENU: {
-    NAME: "🚀 SOAR Purchasing",
-  },
-  FAST_FORWARD_MENU: {
-    NAME: "⏩ Fast-Forward",
-  },
   /** The number of header rows in the project sheets. */
   NUM_HEADER_ROWS: 2,
   /**

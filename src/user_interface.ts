@@ -1,6 +1,5 @@
 import * as actions from "./actions";
 import { verifyAdmin, verifyFinancialOfficer } from "./authorization";
-import OPTS from "./config";
 import { protectRanges } from "./protect_ranges";
 import { sendSelectedToSheet } from "./purchasing";
 import STATUSES_DATA from "./statuses_config";
@@ -28,7 +27,7 @@ export function buildAndAddCustomMenu(): void {
   // Use yourFunction.name because it requires a string and this is a little
   // more reusable than just hardcoding the name
 
-  const customMenu = SpreadsheetApp.getUi().createMenu(OPTS.CUSTOM_MENU.NAME);
+  const customMenu = SpreadsheetApp.getUi().createMenu("🚀 SOAR Purchasing");
 
   addMenuItem(customMenu, STATUSES_DATA.NEW.actionText.all, actions.markAllNew);
   addMenuItem(
@@ -75,13 +74,11 @@ export function buildAndAddCustomMenu(): void {
     customMenu.addSeparator();
     addMenuItem(
       customMenu,
-      "Send to new purchasing sheet",
+      "➡️ Send to new purchasing sheet",
       sendSelectedToSheet
     );
 
-    fastFowardMenu = SpreadsheetApp.getUi().createMenu(
-      OPTS.FAST_FORWARD_MENU.NAME
-    );
+    fastFowardMenu = SpreadsheetApp.getUi().createMenu("Fast-Forward");
     addMenuItem(
       fastFowardMenu,
       STATUSES_DATA.NEW.actionText.fastForward,
