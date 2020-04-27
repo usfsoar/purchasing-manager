@@ -9,11 +9,13 @@ import STATUSES_DATA from "./statuses_config";
  * @param menu The menu to add the item to.
  * @param text The text to display on the menu item.
  * @param action Reference to the function to call when the item is clicked.
+ * IMPORTANT! For this to work, the function must be statically added to the
+ * global object, like with the simple triggers in `index.ts`.
  */
 function addMenuItem(
   menu: GoogleAppsScript.Base.Menu,
   text: string | undefined,
-  action: Function
+  action: () => void
 ): void {
   if (text !== undefined) {
     menu.addItem(text, action.name);

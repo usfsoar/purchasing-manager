@@ -1,4 +1,7 @@
+import * as actions from "./actions";
 import OPTS from "./config";
+import { protectRanges } from "./protect_ranges";
+import { sendSelectedToSheet } from "./purchasing";
 import { buildProjectStatusSlackMessage } from "./slack_utils";
 import { getSheetNameFromProjectName } from "./spreadsheet_utils";
 import { buildAndAddCustomMenu } from "./user_interface";
@@ -64,3 +67,30 @@ export function onOpen(): void {
 
 global.onOpen = onOpen;
 global.doPost = doPost;
+
+// Note: Don't change this into a loop or some other dynamic assignment. It must
+// be an explicit static assignment for each one or Webpack won't see it.
+global.markSelectedReceivedReimburse = actions.markSelectedReceivedReimburse;
+global.markSelectedReimbursed = actions.markSelectedReimbursed;
+global.markSelectedSubmitted = actions.markSelectedSubmitted;
+global.markSelectedApproved = actions.markSelectedApproved;
+global.markSelectedAwaitingPickup = actions.markSelectedAwaitingPickup;
+global.markSelectedAwaitingInfo = actions.markSelectedAwaitingInfo;
+global.markSelectedDenied = actions.markSelectedDenied;
+global.markSelectedNew = actions.markSelectedNew;
+global.markAllNew = actions.markAllNew;
+global.markSelectedReceived = actions.markSelectedReceived;
+global.fastForwardSelectedNew = actions.fastForwardSelectedNew;
+global.fastForwardSelectedReceived = actions.fastForwardSelectedReceived;
+global.fastForwardSelectedReceivedReimburse =
+  actions.fastForwardSelectedReceivedReimburse;
+global.fastForwardSelectedReimbursed = actions.fastForwardSelectedReimbursed;
+global.fastForwardSelectedSubmitted = actions.fastForwardSelectedSubmitted;
+global.fastForwardSelectedApproved = actions.fastForwardSelectedApproved;
+global.fastForwardSelectedAwaitingPickup =
+  actions.fastForwardSelectedAwaitingPickup;
+global.fastForwardSelectedAwaitingInfo =
+  actions.fastForwardSelectedAwaitingInfo;
+global.fastForwardSelectedDenied = actions.fastForwardSelectedDenied;
+global.protectRanges = protectRanges;
+global.sendSelectedToSheet = sendSelectedToSheet;
