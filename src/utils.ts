@@ -2,14 +2,15 @@
  * Replace all occurrences of each key in replacements with the corresponding
  * value, in order. Subsequent replacements can modify previous ones.
  * @param original The string to search in.
- * @param replacements The map of substitutes to use.
+ * @param replacements Map of replacements, where keys are the search strings
+ * and values are the strings to replace them with.
  */
 export function replaceAll(
   original: string,
   replacements: Map<string, string>
 ): string {
   return Array.from(replacements.entries()).reduce<string>(
-    (result, [replacement, search]) =>
+    (result, [search, replacement]) =>
       result.replace(new RegExp(search, "g"), replacement),
     original
   );
