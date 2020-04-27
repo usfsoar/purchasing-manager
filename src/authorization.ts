@@ -22,7 +22,7 @@ export function getActiveUserEmail(): string | null {
  * After first run, uses cache to avoid having to pull the range again.
  * @param email Email of the user to check. If not provided, uses current user's
  * email (sometimes Google does not allow accessing this - in that case, returns
- * `false`).
+ * `false` always).
  * @return `true` if the user is a financial officer.
  */
 export function verifyFinancialOfficer(
@@ -36,17 +36,19 @@ export function verifyFinancialOfficer(
 
 /**
  * Verify whether or not the current user is the admin.
- * @return `true` if the current user is an admin.
+ * @return `true` if the current user is the admin.
  */
 export function verifyAdmin(): boolean {
   return getActiveUserEmail() === SECRET_OPTS.ADMIN_EMAIL;
 }
 
+type UserCache = Partial<User> & Pick<User, "email" | "isFinancialOfficer">;
+
 /**
  * Given the cached user object, checks if it's complete.
  * @param cache The cache object.
  */
-function isUserCacheComplete(cache: Partial<User>): cache is User {
+function isUserCacheComplete(cache: UserCache): cache is User {
   return (
     cache.email !== undefined &&
     cache.fullName !== undefined &&
@@ -60,9 +62,9 @@ function isUserCacheComplete(cache: Partial<User>): cache is User {
  * for it, or returns it from the local cache if it's been asked before.
  * @returns Information about the current user.
  */
-export const getCurrentUserInfo = (function (): () => User {
+export const getCurrentUserInfo = ((): (() => User) => {
   const currentEmail = getActiveUserEmail();
-  const cache: Partial<User> & Pick<User, "email" | "isFinancialOfficer"> = {
+  const cache: UserCache = {
     email: currentEmail ?? "",
     isFinancialOfficer: verifyFinancialOfficer(currentEmail),
   };
@@ -76,20 +78,16 @@ export const getCurrentUserInfo = (function (): () => User {
 
     if (userSheet === null) throw new Error("No user data sheet found.");
 
-    const userData = userSheet.getDataRange().getValues();
+    const userData = userSheet
+      .getDataRange()
+      .getValues()
+      .find((user) => user[0] === cache.email);
 
-    let userDataFound = false;
-    for (let i = 1; i < userData.length; i++) {
-      if (userData[i][0] === cache.email) {
-        cache.slackId = userData[i][1];
-        cache.fullName = userData[i][2];
-        cache.phone = userData[i][3] || undefined;
-        userDataFound = true;
-        break;
-      }
-    }
-
-    if (!userDataFound) {
+    if (userData !== undefined) {
+      cache.slackId = userData[1];
+      cache.fullName = userData[2];
+      cache.phone = userData[3] || undefined; // use || to work with empty string
+    } else {
       while (!cache.slackId) {
         cache.slackId = SpreadsheetApp.getUi()
           .prompt(OPTS.UI.SLACK_ID_PROMPT)
@@ -104,6 +102,6 @@ export const getCurrentUserInfo = (function (): () => User {
     }
 
     if (isUserCacheComplete(cache)) return cache;
-    throw new Error("Failed to get user data.");
+    else throw new Error("Failed to get user data.");
   };
 })();
