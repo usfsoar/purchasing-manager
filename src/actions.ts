@@ -32,7 +32,7 @@ function validateRow(
       .map((column) => column.name) ?? [];
 
   if (missingReccomendedColumns.length > 1) {
-    notifications.warnNotification(
+    notifications.warn(
       `One or more items is missing a value for "${makeListFromArray(
         missingReccomendedColumns
       )}". Will mark anyway with default value.`
@@ -45,7 +45,7 @@ function validateRow(
       .map((column) => column.name) ?? [];
 
   if (missingRequiredColumns.length > 1) {
-    notifications.errorNotification(
+    notifications.error(
       `Cannot submit: one or more items is missing values for ${makeListFromArray(
         missingRequiredColumns
       )}. This value is required.`
@@ -245,7 +245,7 @@ function markItems(newStatus: Status, markAll = false): void {
   }
 
   if (items.length > 0) {
-    notifications.successNotification(
+    notifications.success(
       `${items.length} items marked from ${makeListFromArray(
         newStatus.allowedPrevious.map(wrapInDoubleQuotes),
         "or"
@@ -262,7 +262,7 @@ function markItems(newStatus: Status, markAll = false): void {
       currentSheet.getTabColor() ?? "#000000"
     );
   } else {
-    notifications.errorNotification("No valid items selected for that action.");
+    notifications.error("No valid items selected for that action.");
   }
 }
 
@@ -413,7 +413,7 @@ function fastForwardItems(newStatus: Status): void {
     columnRange.setValues(pastDateColumnsValues[index])
   );
 
-  notifications.successNotification(
+  notifications.success(
     `${numMarked} items fast-forwarded to "${newStatus.text}."`
   );
 }

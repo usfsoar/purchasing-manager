@@ -27,7 +27,7 @@ export function protectRanges(): void {
       const sheetProtection = sheet.protect();
       sheetProtection.removeEditors(sheetProtection.getEditors());
       sheetProtection.addEditors(financialOfficers);
-      notifications.successNotification("Updated protections for " + sheetName);
+      notifications.success("Updated protections for " + sheetName);
     }
   });
 }

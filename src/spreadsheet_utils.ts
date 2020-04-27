@@ -73,9 +73,7 @@ export function checkIfProjectSheet(sheetName?: string): boolean {
   );
 
   if (projectSheetNames.indexOf(currentSheetName) === -1) {
-    nofications.errorNotification(
-      "This action may only be performed in a project sheet"
-    );
+    nofications.error("This action may only be performed in a project sheet");
     return false;
   }
 

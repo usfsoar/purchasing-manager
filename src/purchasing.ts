@@ -58,7 +58,7 @@ export function sendSelectedToSheet(): void {
   }, 0);
 
   if (totalRowCount > 12 || totalRowCount < 1) {
-    notifications.errorNotification(
+    notifications.error(
       "Can only send 1-12 rows at a time to a purchasing sheet."
     );
     return;
@@ -132,15 +132,13 @@ export function sendSelectedToSheet(): void {
   });
 
   if (!allNew) {
-    notifications.errorNotification("One or more items was not 'New'!");
+    notifications.error("One or more items was not 'New'!");
     currentSpreadsheet.deleteSheet(newSheet);
     return;
   }
 
   if (!allHaveSameVendor) {
-    notifications.errorNotification(
-      "The items selected do not all have the same vendor!"
-    );
+    notifications.error("The items selected do not all have the same vendor!");
     currentSpreadsheet.deleteSheet(newSheet);
     return;
   }

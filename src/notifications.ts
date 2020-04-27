@@ -1,20 +1,20 @@
 import OPTS from "./config";
 
 /** Show the user an error message. */
-export function errorNotification(message: string): void {
+export function error(message: string): void {
   SpreadsheetApp.getActiveSpreadsheet().toast(
-      message,
-      OPTS.UI.TOAST_TITLES.ERROR,
-      OPTS.UI.TOAST_DURATION
+    message,
+    OPTS.UI.TOAST_TITLES.ERROR,
+    OPTS.UI.TOAST_DURATION
   );
 }
 
 /** Show the user a warning message. */
-export function warnNotification(message: string): void {
+export function warn(message: string): void {
   SpreadsheetApp.getActiveSpreadsheet().toast(
-      message,
-      OPTS.UI.TOAST_TITLES.WARNING,
-      OPTS.UI.TOAST_DURATION
+    message,
+    OPTS.UI.TOAST_TITLES.WARNING,
+    OPTS.UI.TOAST_DURATION
   );
 }
 
@@ -22,17 +22,17 @@ export function warnNotification(message: string): void {
 export function log(message: string): void {
   Logger.log(message);
   SpreadsheetApp.getActiveSpreadsheet().toast(
-      message,
-      OPTS.UI.TOAST_TITLES.INFO,
-      OPTS.UI.TOAST_DURATION
+    message,
+    OPTS.UI.TOAST_TITLES.INFO,
+    OPTS.UI.TOAST_DURATION
   );
 }
 
 /** Show the user a success message. */
-export function successNotification(message: string): void {
+export function success(message: string): void {
   SpreadsheetApp.getActiveSpreadsheet().toast(
-      message,
-      OPTS.UI.TOAST_TITLES.SUCCESS,
-      OPTS.UI.TOAST_DURATION
+    message,
+    OPTS.UI.TOAST_TITLES.SUCCESS,
+    OPTS.UI.TOAST_DURATION
   );
 }
