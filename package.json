@@ -1,7 +1,7 @@
 {
   "name": "purchasing-manager",
   "dependencies": {
-    "luxon": "^1.23.0"
+    "luxon": "^2.5.2"
   },
   "author": "Ian Sanders <iansanders@mail.usf.edu>",
   "scripts": {
